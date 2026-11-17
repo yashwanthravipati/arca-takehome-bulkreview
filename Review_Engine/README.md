@@ -8,7 +8,8 @@ same normalization the stored text went through.
 
 1. `uv venv --python 3.13 && uv pip install -r requirements.txt && source .venv/bin/activate`
 2. `python scripts/create_review.py --template stability_protocol --name "Stability review"`
-   creates 90 pending cells: 15 current protocols × 6 columns.
+   creates 90 pending cells: 15 current protocols × 6 columns. `--template ha_letter` covers
+   the 10 health-authority letters (commitment, due date, met, owner).
 3. `python scripts/run_workers.py --review 1 --concurrency 8` answers every cell. It is safe to
    kill and re-run, or to run as several processes at once.
 4. `python scripts/show_review.py 1` prints the grid. `--cell <id>` shows one cell's answer,
@@ -21,6 +22,13 @@ same normalization the stored text went through.
 7. `python scripts/check_worker.py` checks the queue rules with a fake model, so it makes no
    API calls: throttling, the spend cap, and one cell per document at a time. Stop other
    workers first.
+8. `python scripts/load_test.py` runs 100,000 cells (25,000 synthetic documents × 4 questions)
+   through 4 worker processes with a fake model. On the way it injects failures and
+   throttling and kills one process. It checks that every cell is done exactly once, every
+   attempt is accounted for, and documents keep one cell in flight and column order. Then it
+   prints throughput per tenth of the run and deletes its data. It refuses to start while
+   another worker is connected: worker connections carry the `application_name`
+   `bulkreview worker …`.
 
 How a worker processes a cell:
 

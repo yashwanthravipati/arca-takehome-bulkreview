@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 380" width="1000" height="380" role="img">
+  <title>Throughput of the queue in each tenth of a 100,000-cell load test with a fake model: 2,742 to 2,999 cells per second in every tenth, with the claim taking about 2 ms throughout, including after a worker process was killed and replaced halfway. The model at Haiku's Scale tier allows about 32 cells per second, about 1% of what the queue sustains.</title>
+  <style>
+    svg { --bg: #ffffff; --fg: #19212b; --muted: #586474; --grid: #e6e9ee; --axis: #c4ccd6;
+      --bar: #008c9c; --model: #a3620a;
+      font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg: #0d1117; --fg: #e1e7ee; --muted: #93a0b0; --grid: #1f2731; --axis: #354150;
+        --bar: #1a9ba8; --model: #c98500; }
+    }
+    .bg { fill: var(--bg); }
+    text { fill: var(--fg); }
+    .t { font-size: 13px; font-weight: 600; }
+    .s { font-size: 11.5px; fill: var(--muted); }
+    .lbl { font-size: 11px; fill: var(--muted); }
+    .v { font-size: 12px; font-weight: 600; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 1; }
+    .bar { fill: var(--bar); }
+    .model { stroke: var(--model); stroke-width: 2; stroke-linecap: round; }
+    .kill { stroke: var(--muted); stroke-width: 1; }
+  </style>
+  <rect class="bg" width="1000" height="380" rx="8"/>
+  <text class="t" x="20" y="34">100,000 cells through the queue, fake model</text>
+  <text class="s" x="20" y="54">Cells finished per second in each tenth of the run. 4 worker processes × 16 loops, Postgres in Docker on a laptop.</text>
+  <text class="lbl" x="74" y="82" text-anchor="end">cells/s</text>
+  <line class="axis" x1="84" y1="300.0" x2="744" y2="300.0"/>
+  <text class="lbl" x="74" y="304.0" text-anchor="end">0</text>
+  <line class="grid" x1="84" y1="241.7" x2="744" y2="241.7"/>
+  <text class="lbl" x="74" y="245.7" text-anchor="end">1,000</text>
+  <line class="grid" x1="84" y1="183.4" x2="744" y2="183.4"/>
+  <text class="lbl" x="74" y="187.4" text-anchor="end">2,000</text>
+  <line class="grid" x1="84" y1="125.1" x2="744" y2="125.1"/>
+  <text class="lbl" x="74" y="129.1" text-anchor="end">3,000</text>
+  <path class="bar" d="M105.0,300 V129.2 A4,4 0 0 1 109.0,125.2 H125.0 A4,4 0 0 1 129.0,129.2 V300 Z"/>
+  <text class="lbl" x="117.0" y="318" text-anchor="middle">0–10%</text>
+  <path class="bar" d="M171.0,300 V138.8 A4,4 0 0 1 175.0,134.8 H191.0 A4,4 0 0 1 195.0,138.8 V300 Z"/>
+  <text class="lbl" x="183.0" y="318" text-anchor="middle">10–20%</text>
+  <path class="bar" d="M237.0,300 V136.9 A4,4 0 0 1 241.0,132.9 H257.0 A4,4 0 0 1 261.0,136.9 V300 Z"/>
+  <text class="lbl" x="249.0" y="318" text-anchor="middle">20–30%</text>
+  <path class="bar" d="M303.0,300 V131.6 A4,4 0 0 1 307.0,127.6 H323.0 A4,4 0 0 1 327.0,131.6 V300 Z"/>
+  <text class="lbl" x="315.0" y="318" text-anchor="middle">30–40%</text>
+  <path class="bar" d="M369.0,300 V140.1 A4,4 0 0 1 373.0,136.1 H389.0 A4,4 0 0 1 393.0,140.1 V300 Z"/>
+  <text class="lbl" x="381.0" y="318" text-anchor="middle">40–50%</text>
+  <path class="bar" d="M435.0,300 V140.8 A4,4 0 0 1 439.0,136.8 H455.0 A4,4 0 0 1 459.0,140.8 V300 Z"/>
+  <text class="lbl" x="447.0" y="318" text-anchor="middle">50–60%</text>
+  <path class="bar" d="M501.0,300 V130.6 A4,4 0 0 1 505.0,126.6 H521.0 A4,4 0 0 1 525.0,130.6 V300 Z"/>
+  <text class="lbl" x="513.0" y="318" text-anchor="middle">60–70%</text>
+  <path class="bar" d="M567.0,300 V133.3 A4,4 0 0 1 571.0,129.3 H587.0 A4,4 0 0 1 591.0,133.3 V300 Z"/>
+  <text class="lbl" x="579.0" y="318" text-anchor="middle">70–80%</text>
+  <path class="bar" d="M633.0,300 V134.2 A4,4 0 0 1 637.0,130.2 H653.0 A4,4 0 0 1 657.0,134.2 V300 Z"/>
+  <text class="lbl" x="645.0" y="318" text-anchor="middle">80–90%</text>
+  <path class="bar" d="M699.0,300 V144.2 A4,4 0 0 1 703.0,140.2 H719.0 A4,4 0 0 1 723.0,144.2 V300 Z"/>
+  <text class="lbl" x="711.0" y="318" text-anchor="middle">90–100%</text>
+  <text class="lbl" x="414.0" y="340" text-anchor="middle">share of the 100,000 cells finished</text>
+  <line class="kill" x1="414.0" y1="90" x2="414.0" y2="300"/>
+  <text class="lbl" x="420.0" y="98">a worker process killed and replaced here;</text>
+  <text class="lbl" x="420.0" y="112">its 5 claimed cells retried after their lease</text>
+  <line class="model" x1="84" y1="298.2" x2="744" y2="298.2"/>
+  <rect class="bar" x="770" y="123.2" width="12" height="12" rx="3"/>
+  <text class="v" x="790" y="133.2">Queue: 2,742–2,999 cells/s</text>
+  <text class="lbl" x="790" y="150.2">in every tenth of the run;</text>
+  <text class="lbl" x="790" y="165.2">claim median 1.9–2.1 ms throughout</text>
+  <line class="model" x1="770" y1="272.2" x2="782" y2="272.2"/>
+  <text class="v" x="790" y="276.2">Model: ≈32 cells/s</text>
+  <text class="lbl" x="790" y="291.2">Haiku 5.5 at Scale tier, drawn to scale</text>
+</svg>

@@ -5,9 +5,10 @@ every fact links to the exact passage and page it came from. An answer that the 
 doesn't back up goes to a person instead of being marked done.
 
 The demo corpus is synthetic: 15 stability protocols for five fictional products, one
-superseded protocol version, and 5 specifications. The stability template asks each protocol
-six questions: storage condition, timepoints, acceptance criteria, deviations, bracketing
-justification and post-approval commitment.
+superseded protocol version, 5 specifications and 10 health-authority letters. The stability
+template asks each protocol six questions: storage condition, timepoints, acceptance criteria,
+deviations, bracketing justification and post-approval commitment. The letters template asks
+four ([below](#example-open-commitments-in-health-authority-letters)).
 
 | On the 90-cell stability review | |
 |---|---|
@@ -44,6 +45,27 @@ justification and post-approval commitment.
   Check those answers, then click **Run on remaining** in the column header.
 - **Rerun** a cell, **Export CSV** (each quote is prefixed by its claim), or **Delete** a
   review.
+
+## Example: open commitments in health-authority letters
+
+The 10 letters come from FDA, EMA, MHRA, Health Canada and Swissmedic, each about one
+post-approval commitment. The `ha_letter` template asks each letter what the company committed
+to, when it is due, whether it has been met, and who owns it. Filter **Met** to "is no" and
+sort by **Due Date**, and the grid lists the open commitments, overdue first:
+
+![The letters review filtered to unmet commitments and sorted by due date: 7 of 10 letters, from Feb 28, 2026 (9 months ago) to Jan 31, 2027, each answer with its page.](docs/screenshots/letters-open-commitments.png)
+
+| On the 40-cell letters review | |
+|---|---|
+| Answers that match the ground truth | 40 of 40 |
+| Citations on the expected page | 40 of 40 |
+| Time and cost, 8 workers | about 30 seconds, under $0.02 |
+
+The support check held one cell for review. HAL-007's "met" is right (no), but one of its
+claims gives a due date that its quote doesn't contain. **Open evidence** shows where each
+answer comes from:
+
+![The evidence view for HAL-009's due date: the answer May 15, 2026, its claim with a verified exact-match quote on page 1, and that sentence highlighted in the letter.](docs/screenshots/letters-evidence.png)
 
 ## How it works
 
@@ -112,6 +134,28 @@ transaction that commits late isn't missed. The upgrade path is `LISTEN/NOTIFY`.
 
 The ceiling is the model's rate limit, not the database.
 
+### Load test: 100,000 cells
+
+`load_test.py` runs the real worker code over 100,000 cells with the model faked: 25,000
+synthetic documents × 4 questions, 4 worker processes × 16 loops, Postgres in Docker on a
+laptop. Along the way, 1% of cells fail their first attempt, 1% are throttled, and halfway
+through one worker process is killed and replaced.
+
+![Cells finished per second in each tenth of a 100,000-cell run: 2,742 to 2,999 in every tenth, with a worker process killed and replaced halfway; the model at Haiku's Scale tier allows about 32 a second, drawn to scale at the bottom.](docs/diagrams/6-load-test.svg)
+
+- **Steady throughput:** 2,742–2,999 cells a second in every tenth of the run, 37.7 seconds
+  in all. The median claim took about 2 ms from the first tenth to the last, so the queue
+  doesn't slow down as finished cells pile up.
+- **Every check passed:**
+  - every cell was done exactly once, each with its verified citation;
+  - 1,000 failed attempts were retried, and 2,243 throttled calls used no attempt;
+  - the killed process's 5 claimed cells were picked up when their leases ran out;
+  - two cells of one document never ran at once, and each document's questions ran in
+    column order.
+- **Headroom:** over 80 times what the model allows at Scale tier (about 32 cells a second).
+
+### With the real model
+
 - **Per cell, measured on review 27:** about 1,050 output tokens and 5.3 s for the answer and
   the check, and $0.0009.
 - **Start tier:** Haiku 5.5 allows 400,000 output tokens a minute. That's about 380 cells a
@@ -128,9 +172,10 @@ The ceiling is the model's rate limit, not the database.
 ## Checks and the eval
 
 ```sh
-Ingestion/.venv/bin/python Ingestion/scripts/check_ingest.py          # every evidence sentence on its expected page (89/89)
+Ingestion/.venv/bin/python Ingestion/scripts/check_ingest.py          # every evidence sentence on its expected page (129/129)
 Review_Engine/.venv/bin/python Review_Engine/scripts/eval_review.py 1  # answers, citations, claims, support check, planted cases
 Review_Engine/.venv/bin/python Review_Engine/scripts/check_worker.py   # queue rules with a fake model (no API calls; stop other workers first)
+Review_Engine/.venv/bin/python Review_Engine/scripts/load_test.py      # 100,000 cells with a fake model, about a minute (stop other workers first)
 ```
 
 The corpus has five planted cases, and the eval checks each one. The pipeline handles four:
@@ -150,7 +195,7 @@ that reads two documents. That isn't built yet.
 | [`Review_Engine/`](Review_Engine/README.md) | Review templates, the worker (queue, model calls, verification, support check), CLI scripts, the eval |
 | `api/` | FastAPI service: reviews, columns, cells, documents, CSV export, live updates. It never calls the model. |
 | `web/` | React, Vite and TanStack Table: the grid, the cell drawer, the evidence view |
-| `docs/diagrams/` | The diagrams in this README |
+| `docs/` | The diagrams and screenshots in this README |
 
 ## Decisions and tradeoffs
 
@@ -178,7 +223,7 @@ that reads two documents. That isn't built yet.
   - keep an audit trail of who decided, when, and with which model and prompt version (a
     rerun overwrites the old answer today).
 - **Questions that span documents:** "does this contradict the current specification?" and
-  "has this commitment been met?"
-- **More document types:** templates and corpus for CMC sections and health-authority letters.
+  "did a later submission meet this commitment?" (today a letter's own statement answers it).
+- **More document types:** templates and corpus for CMC sections.
 - **Long documents:** split them by section.
 - **Scale and access:** a batch lane for big runs, and authentication.
