@@ -194,6 +194,17 @@ def requeue(conn, review_id: int, columns=(), statuses=(), cell_ids=()) -> list[
     return ids
 
 
+def delete_review(conn, review_id: int) -> None:
+    """Delete a review with its columns and cells; citations go with their cells (ON DELETE
+    CASCADE). A worker still answering one of its cells finds the cell gone when it writes,
+    and drops the result."""
+    if not _tuples(conn, "SELECT 1 FROM reviews WHERE id = %s", (review_id,)):
+        raise ReviewError(f"no review {review_id}", 404)
+    conn.execute("DELETE FROM cells WHERE review_id = %s", (review_id,))
+    conn.execute("DELETE FROM columns WHERE review_id = %s", (review_id,))
+    conn.execute("DELETE FROM reviews WHERE id = %s", (review_id,))
+
+
 # --- reading -----------------------------------------------------------------------------
 
 def short_answer(answer) -> str | None:

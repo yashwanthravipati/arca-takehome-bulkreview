@@ -131,7 +131,8 @@ async def process(conn, cell: dict, worker: str, sem: asyncio.Semaphore) -> str:
                 "status": status,
                 "id": cell["id"], "worker": worker})
             if written.rowcount == 0:
-                return "lease lost"  # another worker owns the cell now; drop this result
+                # Another worker owns the cell now, or its review was deleted: drop this result.
+                return "lease lost"
             await conn.execute("DELETE FROM citations WHERE cell_id = %s", (cell["id"],))
             async with conn.cursor() as cur:
                 await cur.executemany(INSERT_CITATION, [

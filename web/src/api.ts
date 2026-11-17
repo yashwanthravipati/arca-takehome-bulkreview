@@ -142,6 +142,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       : detail;
     throw new Error(message || `${res.status} ${res.statusText}`);
   }
+  if (res.status === 204) return undefined as T; // No Content
   return res.json() as Promise<T>;
 }
 
@@ -156,6 +157,7 @@ export const api = {
   createReview: (name: string, template: string) =>
     request<{ id: number }>("/api/reviews", post({ name, template })),
   review: (id: number) => request<ReviewGrid>(`/api/reviews/${id}`),
+  deleteReview: (id: number) => request<void>(`/api/reviews/${id}`, { method: "DELETE" }),
   addColumn: (id: number, column: NewQuestion) =>
     request<{ column_id: number; new_cells: number }>(`/api/reviews/${id}/columns`, post(column)),
   cell: (id: number) => request<CellDetail>(`/api/cells/${id}`),

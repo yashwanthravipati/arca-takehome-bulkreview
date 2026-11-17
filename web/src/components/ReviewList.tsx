@@ -25,6 +25,19 @@ export function ReviewList() {
     };
   }, []);
 
+  async function remove(r: ReviewListItem) {
+    const unfinished = r.total - r.finished;
+    const warning = unfinished ? ` ${unfinished} of its cells are still queued or running and will be dropped.` : "";
+    const question = `Delete "${r.name}" with its ${r.total} answers and their citations?${warning} This can't be undone.`;
+    if (!window.confirm(question)) return;
+    try {
+      await api.deleteReview(r.id);
+      setReviews((list) => list?.filter((x) => x.id !== r.id) ?? null);
+    } catch (e) {
+      window.alert(`Could not delete "${r.name}": ${(e as Error).message}`);
+    }
+  }
+
   return (
     <main className="page">
       <div className="page-head">
@@ -47,6 +60,7 @@ export function ReviewList() {
             <th className="progress-col">Progress</th>
             <th className="num">Needs review</th>
             <th className="num">Failed</th>
+            <th className="row-actions" aria-label="Actions" />
           </tr>
         </thead>
         <tbody>
@@ -72,6 +86,17 @@ export function ReviewList() {
               </td>
               <td className="num">
                 <span className={r.counts.failed ? "count-failed" : "muted"}>{r.counts.failed}</span>
+              </td>
+              <td className="row-actions">
+                <button
+                  className="delete-btn"
+                  onClick={(e) => {
+                    e.stopPropagation(); // the row itself opens the review
+                    remove(r);
+                  }}
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           ))}

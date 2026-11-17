@@ -92,6 +92,12 @@ def get_review(review_id: int):
         return reviews.grid(conn, review_id)
 
 
+@api.delete("/api/reviews/{review_id}", status_code=204)
+def delete_review(review_id: int):
+    with db() as conn:
+        reviews.delete_review(conn, review_id)
+
+
 @api.post("/api/reviews/{review_id}/columns", status_code=201)
 def add_column(review_id: int, column: Column):
     with db() as conn:
