@@ -28,6 +28,7 @@ MAX_ATTEMPTS = 3
 MIN_QUOTE_CHARS = 20  # shorter quotes must be exact and unique in the document (see verify)
 IDLE_POLL_S = 2   # waiting for other workers' leases at the end of a review
 WATCH_POLL_S = 1  # --watch: how often an idle worker looks for new cells
+APP_NAME = "bulkreview worker"  # each worker connection's application_name starts with this
 
 # The status IN (...) conditions match the partial indexes on unfinished cells, so a claim
 # reads only open work, however many finished cells the table holds.
@@ -225,8 +226,10 @@ async def work(url: str, review_id: int | None, worker: str, sem: asyncio.Semaph
     pending or running. With watch=True, keep polling for new cells and never return."""
     claim = {"review_id": review_id, "worker": worker, "max_attempts": MAX_ATTEMPTS,
              "lease_s": int(os.environ.get("LEASE_SECONDS", 30))}
+    # Named in pg_stat_activity, so a script can see whether workers are connected.
     async with await psycopg.AsyncConnection.connect(
-            url, autocommit=True, row_factory=dict_row) as conn:
+            url, autocommit=True, row_factory=dict_row,
+            application_name=f"{APP_NAME} {worker}"[:63]) as conn:
         next_sweep = 0.0
         while True:
             if time.monotonic() >= next_sweep:
