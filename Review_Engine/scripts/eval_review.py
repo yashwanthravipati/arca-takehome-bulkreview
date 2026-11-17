@@ -15,18 +15,17 @@ Usage: python scripts/eval_review.py 1
 import argparse
 import asyncio
 import json
-import os
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 import psycopg
-from dotenv import find_dotenv, load_dotenv
 from psycopg.rows import dict_row
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from app.db import database_url  # noqa: E402
 from app.llm import judge, model_for  # noqa: E402
 from app.text import locate, normalize  # noqa: E402
 from app.worker import page_of  # noqa: E402
@@ -169,8 +168,7 @@ def main():
     ap.add_argument("review", type=int)
     args = ap.parse_args()
 
-    load_dotenv(find_dotenv(usecwd=True))
-    url = os.environ.get("DATABASE_URL", "postgresql://postgres@127.0.0.1:5433/bulkreview")
+    url = database_url()
     gt = json.loads(GT_PATH.read_text(encoding="utf-8"))
     gt_docs = {(d["id"], d["version"]): d for d in gt["documents"]}
 

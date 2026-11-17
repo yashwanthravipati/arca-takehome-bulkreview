@@ -4,7 +4,7 @@ The cells table is the queue. A claim is one atomic UPDATE ... FOR UPDATE SKIP L
 number of worker loops and processes can share a review without taking the same cell. A claim
 is a lease of LEASE_SECONDS (default 30; a call takes 2-6 s): if a worker dies, its cell becomes
 claimable again once the lease expires. A cell gets at most MAX_ATTEMPTS attempts before it is
-marked failed.
+marked failed. With review_id None a worker serves every review (run_workers.py --watch).
 """
 
 import asyncio
@@ -20,14 +20,15 @@ from app.text import locate, normalize
 
 MAX_ATTEMPTS = 3
 MIN_QUOTE_CHARS = 20  # shorter quotes must be exact and unique in the document (see verify)
-IDLE_POLL_S = 2
+IDLE_POLL_S = 2   # waiting for other workers' leases at the end of a review
+WATCH_POLL_S = 1  # --watch: how often an idle worker looks for new cells
 
 CLAIM = """
 UPDATE cells SET status = 'running', attempts = attempts + 1, claimed_by = %(worker)s,
        lease_expires_at = now() + make_interval(secs => %(lease_s)s), updated_at = now()
 WHERE id = (
   SELECT id FROM cells
-  WHERE review_id = %(review_id)s
+  WHERE (%(review_id)s::int IS NULL OR review_id = %(review_id)s)
     AND attempts < %(max_attempts)s
     AND (status = 'pending'
          OR (status = 'running' AND lease_expires_at < now()))
@@ -146,19 +147,25 @@ async def process(conn, cell: dict, worker: str, sem: asyncio.Semaphore) -> str:
         return "error"
 
 
-async def remaining(conn, review_id: int) -> int:
-    """Cells still to finish. Fails cells whose final attempt died with the lease held."""
+async def remaining(conn, review_id: int | None) -> int:
+    """Cells still to finish (in one review, or all with None). Fails cells whose final
+    attempt died with the lease held."""
+    scope = {"review_id": review_id, "max_attempts": MAX_ATTEMPTS}
     await conn.execute(
         "UPDATE cells SET status = 'failed', last_error = 'lease expired during the final attempt',"
-        " updated_at = now() WHERE review_id = %s AND status = 'running' AND attempts >= %s"
-        " AND lease_expires_at < now()", (review_id, MAX_ATTEMPTS))
-    row = await fetchone(conn, "SELECT count(*) AS n FROM cells WHERE review_id = %s"
-                               " AND status IN ('pending', 'running')", (review_id,))
+        " updated_at = now() WHERE (%(review_id)s::int IS NULL OR review_id = %(review_id)s)"
+        " AND status = 'running' AND attempts >= %(max_attempts)s AND lease_expires_at < now()",
+        scope)
+    row = await fetchone(conn, "SELECT count(*) AS n FROM cells"
+                               " WHERE (%(review_id)s::int IS NULL OR review_id = %(review_id)s)"
+                               " AND status IN ('pending', 'running')", scope)
     return row["n"]
 
 
-async def work(url: str, review_id: int, worker: str, sem: asyncio.Semaphore) -> None:
-    """Claim and process cells until none are pending or running."""
+async def work(url: str, review_id: int | None, worker: str, sem: asyncio.Semaphore,
+               watch: bool = False) -> None:
+    """Claim and process cells of one review (or of all reviews with None) until none are
+    pending or running. With watch=True, keep polling for new cells and never return."""
     claim = {"review_id": review_id, "worker": worker, "max_attempts": MAX_ATTEMPTS,
              "lease_s": int(os.environ.get("LEASE_SECONDS", 30))}
     async with await psycopg.AsyncConnection.connect(
@@ -167,7 +174,7 @@ async def work(url: str, review_id: int, worker: str, sem: asyncio.Semaphore) ->
             cell = await fetchone(conn, CLAIM, claim)
             if cell is not None:
                 await process(conn, cell, worker, sem)
-            elif await remaining(conn, review_id) == 0:
+            elif await remaining(conn, review_id) == 0 and not watch:
                 return
-            else:  # other workers hold live leases; one may expire and become claimable
-                await asyncio.sleep(IDLE_POLL_S)
+            else:  # nothing claimable yet: new cells, or other workers' leases may expire
+                await asyncio.sleep(WATCH_POLL_S if watch else IDLE_POLL_S)

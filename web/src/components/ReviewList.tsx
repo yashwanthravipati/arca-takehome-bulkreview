@@ -1,0 +1,84 @@
+import { useEffect, useState } from "react";
+import { api, type ReviewListItem } from "../api";
+import { NewReviewModal } from "./NewReviewModal";
+import { Progress } from "./ui";
+
+const REFRESH_MS = 3000;
+
+export function ReviewList() {
+  const [reviews, setReviews] = useState<ReviewListItem[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      api.reviews().then(
+        (r) => alive && (setReviews(r), setError(null)),
+        (e: Error) => alive && setError(e.message),
+      );
+    load();
+    const timer = setInterval(load, REFRESH_MS);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  return (
+    <main className="page">
+      <div className="page-head">
+        <div>
+          <h1>Reviews</h1>
+          <p className="muted">Each review runs a set of questions across documents. Every answer cites its source.</p>
+        </div>
+        <button className="btn primary" onClick={() => setCreating(true)}>
+          New review
+        </button>
+      </div>
+
+      {error && <div className="error">Could not load reviews: {error}</div>}
+      <table className="list-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Template</th>
+            <th>Created</th>
+            <th className="progress-col">Progress</th>
+            <th className="num">Needs review</th>
+            <th className="num">Failed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {reviews?.map((r) => (
+            <tr key={r.id} onClick={() => (window.location.hash = `#/reviews/${r.id}`)}>
+              <td>
+                <a href={`#/reviews/${r.id}`} className="strong">
+                  {r.name}
+                </a>
+              </td>
+              <td className="muted">{r.template.replace(/_/g, " ")}</td>
+              <td className="muted">{new Date(r.created_at).toLocaleString()}</td>
+              <td>
+                <div className="progress-cell">
+                  <Progress value={r.counts.done} total={r.total} />
+                  <span className="muted tabular">
+                    {r.counts.done}/{r.total} done
+                  </span>
+                </div>
+              </td>
+              <td className="num">
+                <span className={r.counts.needs_review ? "count-review" : "muted"}>{r.counts.needs_review}</span>
+              </td>
+              <td className="num">
+                <span className={r.counts.failed ? "count-failed" : "muted"}>{r.counts.failed}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {reviews?.length === 0 && <div className="empty">No reviews yet. Create one to get started.</div>}
+      {creating && <NewReviewModal onClose={() => setCreating(false)} />}
+    </main>
+  );
+}
