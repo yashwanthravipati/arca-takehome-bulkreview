@@ -1,4 +1,5 @@
-"""Model calls: answer one cell (structured output, cached document prefix) and judge answers.
+"""Model calls: answer one cell (structured output, cached document prefix), check its claims
+against their quotes, and judge answers for the eval.
 
 Request layout for answer_cell. Prompt caching is a prefix match over tools -> system ->
 messages, so everything before the document is identical for every column:

@@ -35,7 +35,7 @@ How a worker processes a cell:
    - Partial indexes cover only unfinished cells, so a claim doesn't slow down as finished
      cells pile up. With 262k finished cells in the table, a claim took 0.009 ms; the old
      query took 15 ms and grew with the table.
-2. **Answer.** One model call per cell, with the fast tier (Claude Haiku 5.5) by default:
+2. **Answer.** One model call answers the cell, with the fast tier (Claude Haiku 5.5) by default:
    - The document goes first as a cached block, so the other columns for that document read it
      from the cache.
    - Throttling (a 429 rate or ramp limit, or a 529 overloaded) is retried within the call,
