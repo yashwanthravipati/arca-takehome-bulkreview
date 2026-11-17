@@ -107,17 +107,37 @@ def tool_choice(model: str, tool_name: str) -> dict:
     return {"type": "auto"}
 
 
+THROTTLED = (anthropic.RateLimitError, anthropic.OverloadedError)  # 429 and 529
+TRANSIENT = (anthropic.InternalServerError, anthropic.APIConnectionError)
+SPEND_CAP = "enforced_spend_limit_reached"  # a 429 that lasts until next month
+
+
+def is_throttled(e: Exception) -> bool:
+    """A 429 rate or ramp limit, or 529 overloaded: the API asks us to slow down and the request
+    itself is fine. The monthly spend-cap 429 is not throttling: no retry can succeed."""
+    return isinstance(e, THROTTLED) and e.error_code != SPEND_CAP
+
+
+def backoff_s(e: Exception, attempt: int) -> float:
+    """Wait before retrying: the API's retry-after header when it sends one, else exponential
+    backoff (~2s, 4s, 8s). Jitter keeps throttled workers from retrying in lockstep."""
+    try:
+        wait = float(e.response.headers["retry-after"])
+    except (AttributeError, KeyError, ValueError):
+        wait = 2 ** attempt
+    return wait + random.uniform(0, 1)
+
+
 async def create(**kwargs):
-    """messages.create, retried on 429, 5xx (incl. 529 overloaded) and connection errors with
-    exponential backoff plus jitter: up to MAX_TRIES tries in total."""
+    """messages.create, retried on throttling, 5xx and connection errors: up to MAX_TRIES tries
+    in total. The spend-cap 429 is raised at once."""
     for attempt in range(1, MAX_TRIES + 1):
         try:
             return await client().messages.create(**kwargs)
-        except (anthropic.RateLimitError, anthropic.InternalServerError,
-                anthropic.APIConnectionError):
-            if attempt == MAX_TRIES:
+        except (*THROTTLED, *TRANSIENT) as e:
+            if attempt == MAX_TRIES or (isinstance(e, THROTTLED) and not is_throttled(e)):
                 raise
-            await asyncio.sleep(2 ** attempt + random.uniform(0, 1))  # ~2s, 4s, 8s
+            await asyncio.sleep(backoff_s(e, attempt))
 
 
 def tool_input(msg, tool_name: str) -> dict:

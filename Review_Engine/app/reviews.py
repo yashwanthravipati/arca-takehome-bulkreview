@@ -77,16 +77,16 @@ def filter_sql(doc_filter: dict) -> tuple[str, dict]:
 def insert_cells(conn, review_id: int, doc_filter: dict, column_id: int | None = None) -> int:
     """One pending cell per (matching document, column); only `column_id`'s cells if given."""
     where, params = filter_sql(doc_filter)
-    # Column-major ids: workers claim in id order, so the first column of every document runs
-    # before any document's second column. By then the document prefix is cached and the
-    # remaining columns read it instead of all writing it at once.
+    # Ids run document by document, in column order within each. Workers claim the lowest id
+    # that is its document's first unfinished cell (see worker.py), so documents run in order
+    # and each document's questions run back to back while its prompt cache is warm.
     return conn.execute(
         f"""INSERT INTO cells (review_id, column_id, doc_id, version)
             SELECT %(review_id)s, c.id, d.id, d.version
             FROM columns c CROSS JOIN documents d
             WHERE c.review_id = %(review_id)s
               AND (%(column_id)s::int IS NULL OR c.id = %(column_id)s) AND {where}
-            ORDER BY c.position, d.id, d.version
+            ORDER BY d.id, d.version, c.position
             ON CONFLICT DO NOTHING""",
         {"review_id": review_id, "column_id": column_id, **params}).rowcount
 

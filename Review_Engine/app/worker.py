@@ -5,16 +5,22 @@ number of worker loops and processes can share a review without taking the same 
 is a lease of LEASE_SECONDS (default 30; a call takes 2-6 s): if a worker dies, its cell becomes
 claimable again once the lease expires. A cell gets at most MAX_ATTEMPTS attempts before it is
 marked failed. With review_id None a worker serves every review (run_workers.py --watch).
+
+Only the first unfinished cell of each document is claimable, so a document's questions run one
+after another: the first writes the document to the prompt cache and the rest read it, at any
+review size. Workers spread across documents instead. Throttling (429, 529) puts a cell back in
+the queue without using an attempt.
 """
 
 import asyncio
 import os
+import time
 
 import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from app.llm import answer_cell
+from app.llm import answer_cell, backoff_s, is_throttled
 from app.models import Column
 from app.text import locate, normalize
 
@@ -23,16 +29,22 @@ MIN_QUOTE_CHARS = 20  # shorter quotes must be exact and unique in the document 
 IDLE_POLL_S = 2   # waiting for other workers' leases at the end of a review
 WATCH_POLL_S = 1  # --watch: how often an idle worker looks for new cells
 
+# The status IN (...) conditions match the partial indexes on unfinished cells, so a claim
+# reads only open work, however many finished cells the table holds.
 CLAIM = """
 UPDATE cells SET status = 'running', attempts = attempts + 1, claimed_by = %(worker)s,
        lease_expires_at = now() + make_interval(secs => %(lease_s)s), updated_at = now()
 WHERE id = (
-  SELECT id FROM cells
-  WHERE (%(review_id)s::int IS NULL OR review_id = %(review_id)s)
-    AND attempts < %(max_attempts)s
-    AND (status = 'pending'
-         OR (status = 'running' AND lease_expires_at < now()))
-  ORDER BY id
+  SELECT c.id FROM cells c
+  WHERE c.status IN ('pending', 'running')
+    AND (c.status = 'pending' OR c.lease_expires_at < now())
+    AND c.attempts < %(max_attempts)s
+    AND (%(review_id)s::int IS NULL OR c.review_id = %(review_id)s)
+    -- the first unfinished cell of its document in this review (see the module docstring)
+    AND c.id = (SELECT min(s.id) FROM cells s
+                WHERE s.review_id = c.review_id AND s.doc_id = c.doc_id
+                  AND s.version = c.version AND s.status IN ('pending', 'running'))
+  ORDER BY c.id
   FOR UPDATE SKIP LOCKED
   LIMIT 1)
 RETURNING *
@@ -59,6 +71,22 @@ RECORD_FAILURE = """
 UPDATE cells SET status = CASE WHEN attempts >= %(max_attempts)s THEN 'failed' ELSE 'pending' END,
        last_error = %(error)s, lease_expires_at = NULL, updated_at = now()
 WHERE id = %(id)s AND status = 'running' AND claimed_by = %(worker)s
+"""
+
+# Throttling is not the cell's fault: back to the queue, and the claim's attempt is returned.
+REQUEUE_THROTTLED = """
+UPDATE cells SET status = 'pending', attempts = attempts - 1, last_error = %(error)s,
+       lease_expires_at = NULL, updated_at = now()
+WHERE id = %(id)s AND status = 'running' AND claimed_by = %(worker)s
+"""
+
+# A cell whose final attempt died with the lease held: no worker will finish it, and as an
+# unfinished cell it would hold up the rest of its document.
+SWEEP_DEAD = """
+UPDATE cells SET status = 'failed', last_error = 'lease expired during the final attempt',
+       updated_at = now()
+WHERE (%(review_id)s::int IS NULL OR review_id = %(review_id)s)
+  AND status = 'running' AND attempts >= %(max_attempts)s AND lease_expires_at < now()
 """
 
 
@@ -142,6 +170,11 @@ async def process(conn, cell: dict, worker: str, sem: asyncio.Semaphore) -> str:
 
     except Exception as e:  # noqa: BLE001 - any failure is recorded on the cell and retried
         error = f"{type(e).__name__}: {e}"[:1000]
+        if is_throttled(e):  # still throttled after create()'s own retries
+            await conn.execute(REQUEUE_THROTTLED, {"id": cell["id"], "worker": worker,
+                                                   "error": error})
+            await asyncio.sleep(backoff_s(e, attempt=4))  # pause this loop before it claims again
+            return "throttled"
         print(f"cell {cell['id']} attempt {cell['attempts']} failed: {error}", flush=True)
         await conn.execute(RECORD_FAILURE, {"id": cell["id"], "worker": worker,
                                             "error": error, "max_attempts": MAX_ATTEMPTS})
@@ -149,17 +182,10 @@ async def process(conn, cell: dict, worker: str, sem: asyncio.Semaphore) -> str:
 
 
 async def remaining(conn, review_id: int | None) -> int:
-    """Cells still to finish (in one review, or all with None). Fails cells whose final
-    attempt died with the lease held."""
-    scope = {"review_id": review_id, "max_attempts": MAX_ATTEMPTS}
-    await conn.execute(
-        "UPDATE cells SET status = 'failed', last_error = 'lease expired during the final attempt',"
-        " updated_at = now() WHERE (%(review_id)s::int IS NULL OR review_id = %(review_id)s)"
-        " AND status = 'running' AND attempts >= %(max_attempts)s AND lease_expires_at < now()",
-        scope)
+    """Cells still to finish (in one review, or all with None)."""
     row = await fetchone(conn, "SELECT count(*) AS n FROM cells"
                                " WHERE (%(review_id)s::int IS NULL OR review_id = %(review_id)s)"
-                               " AND status IN ('pending', 'running')", scope)
+                               " AND status IN ('pending', 'running')", {"review_id": review_id})
     return row["n"]
 
 
@@ -171,7 +197,11 @@ async def work(url: str, review_id: int | None, worker: str, sem: asyncio.Semaph
              "lease_s": int(os.environ.get("LEASE_SECONDS", 30))}
     async with await psycopg.AsyncConnection.connect(
             url, autocommit=True, row_factory=dict_row) as conn:
+        next_sweep = 0.0
         while True:
+            if time.monotonic() >= next_sweep:
+                await conn.execute(SWEEP_DEAD, claim)
+                next_sweep = time.monotonic() + claim["lease_s"]
             cell = await fetchone(conn, CLAIM, claim)
             if cell is not None:
                 await process(conn, cell, worker, sem)

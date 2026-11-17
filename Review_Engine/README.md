@@ -18,14 +18,30 @@ same normalization the stored text went through.
 6. `python scripts/requeue.py --review 1 --column deviations` re-queues a column after you
    edit it in the template. `--status needs_review` or `--cell <id>` re-queue other cells.
    Then run step 3 again.
+7. `python scripts/check_worker.py` checks the queue rules with a fake model, so it makes no
+   API calls: throttling, the spend cap, and one cell per document at a time. Stop other
+   workers first.
 
 How a worker processes a cell:
 
 1. **Claim.** One `UPDATE … FOR UPDATE SKIP LOCKED` takes the cell with a lease of
    `LEASE_SECONDS` (default 30; a call takes 2–6 s). A cell gets at most 3 attempts.
+   - Only the first unfinished cell of each document can be claimed. A document's questions
+     therefore run back to back, while workers spread across documents.
+   - The first question writes the document to the prompt cache and the rest read it: one
+     cache write per document, at any review size. Before this, a document's questions were
+     spread across the whole run. Past a few thousand documents that is longer than the
+     5-minute cache lifetime, so every question would pay to write the cache again.
+   - Partial indexes cover only unfinished cells, so a claim doesn't slow down as finished
+     cells pile up. With 262k finished cells in the table, a claim took 0.009 ms; the old
+     query took 15 ms and grew with the table.
 2. **Answer.** One model call per cell, with the fast tier (Claude Haiku 5.5) by default:
    - The document goes first as a cached block, so the other columns for that document read it
      from the cache.
+   - Throttling (a 429 rate or ramp limit, or a 529 overloaded) is retried within the call,
+     waiting as long as the `retry-after` header asks. If it persists, the cell goes back in
+     the queue without using an attempt and the worker loop pauses. The monthly spend-cap
+     429 can't be retried away, so it fails the cell normally.
    - The answer comes back as a forced `record_answer` tool call: `found`, `answer`,
      `citations`, `reasoning`.
 3. **Verify.** Each quote is located in the stored text (exact match, else fuzzy ≥ 95) and

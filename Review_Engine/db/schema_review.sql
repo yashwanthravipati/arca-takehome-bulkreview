@@ -46,6 +46,13 @@ CREATE TABLE IF NOT EXISTS cells (
   FOREIGN KEY (doc_id, version) REFERENCES documents(id, version)
 );
 CREATE INDEX IF NOT EXISTS cells_claim_idx ON cells (review_id, status, lease_expires_at);
+-- Partial indexes over unfinished cells only, so claiming stays cheap however many finished
+-- cells accumulate: the claim walks open cells in id order and checks that each is the first
+-- unfinished cell of its document (app/worker.py CLAIM).
+CREATE INDEX IF NOT EXISTS cells_open_idx ON cells (id)
+  WHERE status IN ('pending', 'running');
+CREATE INDEX IF NOT EXISTS cells_open_doc_idx ON cells (review_id, doc_id, version, id)
+  WHERE status IN ('pending', 'running');
 
 CREATE TABLE IF NOT EXISTS citations (
   id           bigserial PRIMARY KEY,
