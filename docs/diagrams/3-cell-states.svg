@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 320" width="1000" height="320" role="img">
+  <title>Cell states. New cells start pending, or held when they are outside a sample run until someone runs the rest. A worker claims a pending cell, making it running. A running cell ends as done, needs review, not found, or failed after three attempts. Errors with attempts left and throttled calls return it to pending; an expired lease lets another worker claim it again. Rerun and Edit column return finished cells to pending.</title>
+  <style>
+    svg { --bg: #ffffff; --fg: #19212b; --muted: #586474; --line: #c4ccd6; --edge: #78849a;
+      --node: #ffffff; --panel: #eef1f5; --accent: #0a7782; --accent-soft: #ddf0f1;
+      --ok: #2b7650; --ok-soft: #e2f1e8; --warn: #a3620a; --warn-soft: #fbefda;
+      --bad: #b3372b; --bad-soft: #f8e2df;
+      font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg: #0d1117; --fg: #e1e7ee; --muted: #93a0b0; --line: #354150; --edge: #7e8a9b;
+        --node: #161d26; --panel: #121921; --accent: #47b8c3; --accent-soft: #123137;
+        --ok: #5ec48f; --ok-soft: #13301f; --warn: #e2a64b; --warn-soft: #33250e;
+        --bad: #ef7b6e; --bad-soft: #3a1915; }
+    }
+    .bg { fill: var(--bg); }
+    text { fill: var(--fg); }
+    .t { font-size: 13px; font-weight: 600; }
+    .tm { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; font-weight: 500; }
+    .s { font-size: 11.5px; fill: var(--muted); }
+    .m { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; }
+    .lbl { font-size: 11px; fill: var(--muted); }
+    .lbl.hot, .hot-text { fill: var(--accent); font-weight: 500; }
+    .node { fill: var(--node); stroke: var(--line); stroke-width: 1.2; }
+    .group { fill: var(--panel); stroke: var(--line); stroke-width: 1.2; }
+    .hotbox { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.6; }
+    .okbox { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.3; }
+    .warnbox { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 1.3; }
+    .badbox { fill: var(--bad-soft); stroke: var(--bad); stroke-width: 1.3; }
+    .band { fill: var(--accent-soft); }
+    .edge { fill: none; stroke: var(--edge); stroke-width: 1.4; }
+    .edge.hot { stroke: var(--accent); stroke-width: 1.8; }
+    .dash { stroke-dasharray: 5 4; }
+    .dots { stroke-dasharray: 2 3; }
+    .ah { fill: var(--edge); }
+    .ah.hot { fill: var(--accent); }
+    .ink { fill: var(--fg); }
+    .accent-fill { fill: var(--accent); }
+    .bad-fill { fill: var(--bad); }
+    .gate { fill: var(--node); stroke: var(--accent); stroke-width: 1.5; }
+  </style>
+  <rect class="bg" width="1000" height="320"/>
+  <defs>
+    <marker id="f3a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="ah" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="f3h" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="ah hot" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs>
+
+  <!-- entry -->
+  <circle class="ink" cx="60" cy="169" r="6"/>
+  <path class="edge" d="M66,169 H227" marker-end="url(#f3a)"/>
+  <text class="lbl" x="146" y="161" text-anchor="middle">cells created</text>
+  <path class="edge" d="M60,163 V55 H227" marker-end="url(#f3a)"/>
+  <text class="lbl" x="146" y="47" text-anchor="middle">outside a sample run</text>
+  <path class="edge" d="M295,74 V147" marker-end="url(#f3a)"/>
+  <text class="lbl" x="303" y="116">Run on remaining</text>
+
+  <!-- claim -->
+  <path class="edge hot" d="M360,169 H467" marker-end="url(#f3h)"/>
+  <text class="lbl hot" x="414" y="161" text-anchor="middle">claimed (lease)</text>
+  <path class="edge" d="M512,150 C500,104 570,104 558,150" marker-end="url(#f3a)"/>
+  <text class="lbl" x="535" y="97" text-anchor="middle">lease expired: claimed again</text>
+
+  <!-- outcomes -->
+  <path class="edge" d="M600,169 H680 V59 H757" marker-end="url(#f3a)"/>
+  <path class="edge" d="M680,169 V123 H757" marker-end="url(#f3a)"/>
+  <path class="edge" d="M680,169 V187 H757" marker-end="url(#f3a)"/>
+  <path class="edge" d="M680,169 V251 H757" marker-end="url(#f3a)"/>
+  <text class="lbl" x="638" y="161" text-anchor="middle">result written</text>
+  <text class="lbl" x="674" y="244" text-anchor="end">3 attempts failed</text>
+
+  <!-- back to pending -->
+  <path class="edge" d="M535,188 C535,238 315,238 315,191" marker-end="url(#f3a)"/>
+  <text class="lbl" x="425" y="254" text-anchor="middle">an error with attempts left,</text>
+  <text class="lbl" x="425" y="268" text-anchor="middle">or throttled (attempt kept)</text>
+  <path class="edge dash" d="M930,59 H948 M930,123 H948 M930,187 H948 M930,251 H948 M948,59 V300 H275 V191" marker-end="url(#f3a)"/>
+  <text class="lbl" x="612" y="292" text-anchor="middle">Rerun cell · Edit column</text>
+
+  <!-- states -->
+  <rect class="node" x="230" y="36" width="130" height="38" rx="19"/>
+  <text class="t" x="295" y="59" text-anchor="middle">held</text>
+  <rect class="node" x="230" y="150" width="130" height="38" rx="19"/>
+  <text class="t" x="295" y="173" text-anchor="middle">pending</text>
+  <rect class="hotbox" x="470" y="150" width="130" height="38" rx="19"/>
+  <text class="t" x="535" y="173" text-anchor="middle">running</text>
+  <rect class="okbox" x="760" y="40" width="170" height="38" rx="19"/>
+  <text class="t" x="845" y="63" text-anchor="middle">done</text>
+  <rect class="warnbox" x="760" y="104" width="170" height="38" rx="19"/>
+  <text class="t" x="845" y="127" text-anchor="middle">needs review</text>
+  <rect class="node" x="760" y="168" width="170" height="38" rx="19"/>
+  <text class="t" x="845" y="191" text-anchor="middle">not found</text>
+  <rect class="badbox" x="760" y="232" width="170" height="38" rx="19"/>
+  <text class="t" x="845" y="255" text-anchor="middle">failed</text>
+</svg>
