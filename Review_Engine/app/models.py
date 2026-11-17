@@ -68,6 +68,21 @@ class ToolAnswer(BaseModel):
             raise ValueError(f"answer {a!r} is not a valid {answer_type}")
 
 
+# Input schema of the record_checks tool. The reason comes before the verdict on purpose: with
+# the verdict first, the checker often contradicted its own reason (measured on review 27: 37 of
+# 86 cells flagged, against 15 with this order on the same rules).
+class ClaimCheck(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    claim_no: int
+    reason: str = Field(description="One line: what the quotes say about the claim's key fact.")
+    ok: bool
+
+
+class ClaimChecks(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    verdicts: list[ClaimCheck] = Field(description="One verdict per claim, in order.")
+
+
 def _is_iso_date(s: str) -> bool:
     try:
         date.fromisoformat(s)

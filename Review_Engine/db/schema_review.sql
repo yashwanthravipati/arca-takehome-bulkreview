@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS cells (
      -- (held: left out of a column's sample run; never claimed until queued)
   answer             jsonb,
   claims             jsonb,                    -- the answer's claims, in order; citations.claim_no points here
+  checks             jsonb,                    -- per claim: {"ok", "reason"} from the support check, or null
   reasoning          text,
   attempts           int NOT NULL DEFAULT 0,
   claimed_by         text,
@@ -74,4 +75,5 @@ CREATE INDEX IF NOT EXISTS citations_cell_idx ON citations (cell_id);
 -- Per-claim citations, for databases created before them. Cells answered earlier keep null
 -- claims and claim_no; the UI shows their citations as one flat list.
 ALTER TABLE cells ADD COLUMN IF NOT EXISTS claims jsonb;
+ALTER TABLE cells ADD COLUMN IF NOT EXISTS checks jsonb;
 ALTER TABLE citations ADD COLUMN IF NOT EXISTS claim_no int;

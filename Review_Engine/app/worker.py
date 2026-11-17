@@ -20,7 +20,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from app.llm import answer_cell, backoff_s, is_throttled
+from app.llm import answer_cell, backoff_s, check_claims, is_throttled
 from app.models import Column
 from app.text import locate, normalize
 
@@ -47,14 +47,17 @@ WHERE id = (
   ORDER BY c.id
   FOR UPDATE SKIP LOCKED
   LIMIT 1)
-RETURNING *
+RETURNING id, review_id, column_id, doc_id, version, attempts
 """
+# Named columns, not RETURNING *: workers keep this statement prepared, and Postgres refuses a
+# cached plan whose result columns change, so adding a column to cells would crash every
+# running worker ("cached plan must not change result type").
 
 # Guarded by status and claimed_by: if this worker's lease expired and another worker
 # re-claimed the cell, the stale result is dropped instead of overwriting the new attempt.
 WRITE_RESULT = """
 UPDATE cells SET status = %(status)s, answer = %(answer)s, claims = %(claims)s,
-       reasoning = %(reasoning)s, model = %(model)s, input_tokens = %(input_tokens)s, output_tokens = %(output_tokens)s,
+       checks = %(checks)s, reasoning = %(reasoning)s, model = %(model)s, input_tokens = %(input_tokens)s, output_tokens = %(output_tokens)s,
        cache_read_tokens = %(cache_read_tokens)s, cache_write_tokens = %(cache_write_tokens)s,
        latency_ms = %(latency_ms)s, lease_expires_at = NULL, updated_at = now()
 WHERE id = %(id)s AND status = 'running' AND claimed_by = %(worker)s
@@ -118,14 +121,20 @@ def verify(quote: str, text: str, pages: list[dict]) -> dict:
             "page_no": page_of(start, pages), "verified": True, "match_method": method}
 
 
+def quoted(claim: dict) -> bool:
+    """The claim has quotes and every one was found in the document."""
+    return bool(claim["citations"]) and all(q["verified"] for q in claim["citations"])
+
+
 def decide_status(found: bool, answer, claims: list[dict]) -> str:
-    """`claims`: [{"claim": str, "citations": [verify() results]}]. An answer is done only when
-    every claim has quotes and every quote was found in the document, and a list answer has a
-    claim for each item. Anything else goes to a human."""
+    """`claims`: [{"claim": str, "citations": [verify() results], "check": {"ok", "reason"} or
+    None}]. An answer is done only when every claim's quotes were found in the document and the
+    check says they support its key fact, and a list answer has a claim for each item. Anything
+    else goes to a human."""
     if not found:
         return "not_found"
     supported = bool(claims) and all(
-        c["citations"] and all(q["verified"] for q in c["citations"]) for c in claims)
+        quoted(c) and (c.get("check") or {}).get("ok") is True for c in claims)
     covered = not isinstance(answer, list) or len(claims) >= len(answer)
     return "done" if supported and covered else "needs_review"
 
@@ -153,8 +162,21 @@ async def process(conn, cell: dict, worker: str, sem: asyncio.Semaphore) -> str:
         async with sem:  # caps concurrent model calls across all worker loops in this process
             result = await answer_cell(text, column)
 
-        claims = [{"claim": c.claim, "citations": [verify(q, text, pages) for q in c.quotes]}
-                  for c in result.claims]
+        claims = [{"claim": c.claim, "citations": [verify(q, text, pages) for q in c.quotes],
+                   "check": None} for c in result.claims]
+        # Check the claims whose quotes were all found: do those quotes support the key fact?
+        # (A claim with a missing quote goes to review anyway.) The call's tokens and time are
+        # added to the cell's, so the cost totals include it.
+        checkable = [c for c in claims if quoted(c)]
+        if checkable:
+            async with sem:
+                verdicts, usage = await check_claims(
+                    [(c["claim"], [q["quote"] for q in c["citations"]]) for c in checkable])
+            for c, v in zip(checkable, verdicts):
+                c["check"] = v and {"ok": v.ok, "reason": v.reason}
+            result.input_tokens += usage["input_tokens"]
+            result.output_tokens += usage["output_tokens"]
+            result.latency_ms += usage["latency_ms"]
         status = decide_status(result.found, result.answer, claims)
 
         async with conn.transaction():
@@ -162,6 +184,7 @@ async def process(conn, cell: dict, worker: str, sem: asyncio.Semaphore) -> str:
                 **result.model_dump(exclude={"found", "claims"}),
                 "answer": None if result.answer is None else Jsonb(result.answer),
                 "claims": Jsonb([c["claim"] for c in claims]),
+                "checks": Jsonb([c["check"] for c in claims]),
                 "status": status,
                 "id": cell["id"], "worker": worker})
             if written.rowcount == 0:

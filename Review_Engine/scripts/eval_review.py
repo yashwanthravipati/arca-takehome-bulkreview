@@ -116,21 +116,37 @@ def print_accuracy(results, keys):
             print("-" * 60)
 
 
-def print_claims(cells):
+def print_claims(cells, results):
     """Per-claim evidence over answered cells; cells answered before per-claim citations
-    (claims is null) are skipped."""
+    (claims is null) are skipped. For the support check, the flagged cells are compared with
+    the eval's verdicts: a flag on a wrong answer is a catch, a flag on a right one a false alarm."""
     answered = [c for c in cells if c["claims"] is not None and c["status"] in ("done", "needs_review")]
     if not answered:
         return
-    claims = supported = items = items_covered = 0
+    claims = supported = items = items_covered = checked = 0
+    flagged = []
     for c in answered:
         claims += len(c["claims"])
         supported += len({ct["claim_no"] for ct in c["citations"] if ct["verified"]})
         if isinstance(c["answer"], list):
             items += len(c["answer"])
             items_covered += min(len(c["answer"]), len(c["claims"]))
+        checks = c["checks"] or []
+        checked += sum(ch is not None for ch in checks)
+        if any(ch is not None and not ch["ok"] for ch in checks):
+            flagged.append(c)
     print(f"claims: {supported}/{claims} have a quote found in the document; "
           f"{items_covered}/{items} list items have a claim")
+    if checked:
+        correct = {r["id"]: r["correct"] for r in results}
+        wrong = [c for c in flagged if correct.get(c["id"]) is False]
+        print(f"support check: {checked} claims checked; {len(flagged)} cells flagged, "
+              f"{len(wrong)} of them judged wrong by this eval")
+        for c in flagged:
+            verdict = {True: "eval: correct", False: "eval: wrong", None: "eval: no ground truth"}
+            print(f"  {c['doc_id']} {c['key']} ({verdict[correct.get(c['id'])]}): " + "; ".join(
+                f"claim {n}: {ch['reason']}" for n, ch in enumerate(c["checks"], 1)
+                if ch is not None and not ch["ok"])[:300])
 
 
 def print_planted(results, gt, review_docs, last_page):
@@ -193,7 +209,7 @@ def main():
 
     with psycopg.connect(url, row_factory=dict_row) as conn:
         cells = conn.execute(
-            """SELECT c.id, c.doc_id, c.version, c.status, c.answer, c.claims,
+            """SELECT c.id, c.doc_id, c.version, c.status, c.answer, c.claims, c.checks,
                       col.key, col.question, col.answer_type, col.position
                FROM cells c JOIN columns col ON col.id = c.column_id
                WHERE c.review_id = %s ORDER BY col.position, c.doc_id""",
@@ -227,7 +243,7 @@ def main():
         counts[c["status"]] += 1
     print("\nstatus: " + ", ".join(f"{s} {counts[s]}" for s in
                                    ("done", "not_found", "needs_review", "failed", "pending", "running")))
-    print_claims(cells)
+    print_claims(cells, results)
 
     print("\nplanted cases:")
     last_page = {d: p[-1]["page_no"] for d, p in pages.items()}

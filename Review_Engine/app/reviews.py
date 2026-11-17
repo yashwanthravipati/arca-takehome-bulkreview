@@ -187,10 +187,10 @@ def add_column(conn, review_id: int, column: Column, sample: int | None = None) 
 
 
 RESET = """
-UPDATE cells SET status = 'pending', answer = NULL, claims = NULL, reasoning = NULL, attempts = 0,
-       claimed_by = NULL, lease_expires_at = NULL, last_error = NULL, model = NULL,
-       input_tokens = NULL, output_tokens = NULL, cache_read_tokens = NULL,
-       cache_write_tokens = NULL, latency_ms = NULL, updated_at = now()
+UPDATE cells SET status = 'pending', answer = NULL, claims = NULL, checks = NULL,
+       reasoning = NULL, attempts = 0, claimed_by = NULL, lease_expires_at = NULL,
+       last_error = NULL, model = NULL, input_tokens = NULL, output_tokens = NULL,
+       cache_read_tokens = NULL, cache_write_tokens = NULL, latency_ms = NULL, updated_at = now()
 WHERE id = ANY(%s)
 """
 
@@ -379,9 +379,9 @@ def cell_detail(conn, cell_id: int) -> dict:
     """One cell in full: answer, reasoning, metrics, and its citations in order."""
     cell = _rows(conn, """
         SELECT c.id, c.review_id, c.doc_id, c.version, c.column_id, col.key, col.question,
-               col.answer_type, c.status, c.answer, c.claims, c.reasoning, c.model, c.input_tokens,
-               c.output_tokens, c.cache_read_tokens, c.cache_write_tokens, c.latency_ms,
-               c.attempts, c.last_error, c.updated_at
+               col.answer_type, c.status, c.answer, c.claims, c.checks, c.reasoning, c.model,
+               c.input_tokens, c.output_tokens, c.cache_read_tokens, c.cache_write_tokens,
+               c.latency_ms, c.attempts, c.last_error, c.updated_at
         FROM cells c JOIN columns col ON col.id = c.column_id WHERE c.id = %s""", (cell_id,))
     if not cell:
         raise ReviewError(f"no cell {cell_id}", 404)

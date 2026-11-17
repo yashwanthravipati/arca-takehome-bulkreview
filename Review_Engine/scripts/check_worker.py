@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app import reviews, worker  # noqa: E402
 from app.db import database_url  # noqa: E402
 from app.llm import SPEND_CAP  # noqa: E402
-from app.models import CellResult, Claim  # noqa: E402
+from app.models import CellResult, Claim, ClaimCheck  # noqa: E402
 
 URL = database_url()
 DOCS = ["STAB-001", "STAB-002", "STAB-003"]  # 3 documents x 6 questions = 18 cells
@@ -49,12 +49,19 @@ def fake_result(doc_text: str) -> CellResult:
                       cache_read_tokens=0, cache_write_tokens=0, latency_ms=0)
 
 
+async def fake_check(claims):
+    """The support check, faked: every claim supported, no tokens used."""
+    verdicts = [ClaimCheck(claim_no=n, reason="fake", ok=True) for n in range(1, len(claims) + 1)]
+    return verdicts, {"input_tokens": 0, "output_tokens": 0, "latency_ms": 0}
+
+
 async def run(name: str, docs: list[str], fake) -> list[dict]:
     """Answer a temporary review's cells with `fake` as the model; return its cells."""
     with psycopg.connect(URL) as conn:
         review_id = reviews.create_review(conn, f"check_worker: {name}", "stability_protocol",
                                           {"id": docs})["id"]
     worker.answer_cell = fake
+    worker.check_claims = fake_check
     try:
         sem = asyncio.Semaphore(LOOPS)
         await asyncio.gather(*(worker.work(URL, review_id, f"check:{i}", sem)

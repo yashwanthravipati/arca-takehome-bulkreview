@@ -16,7 +16,7 @@ import time
 
 import anthropic
 
-from app.models import CellResult, Column, ToolAnswer
+from app.models import CellResult, ClaimCheck, ClaimChecks, Column, ToolAnswer
 
 MAX_TRIES = 4
 MAX_TOKENS = 8192  # room for adaptive thinking on the strong tier; Haiku answers in a few hundred
@@ -76,6 +76,30 @@ Do these two answers state the same facts? The candidate may add detail that is 
 with the reference, but it must include the reference's key values (conditions, numbers, \
 limits, batches, durations) and must not contradict any of them. Reply with match true/false \
 and a one-line reason by calling record_verdict."""
+
+CHECK_TOOL = {
+    "name": "record_checks",
+    "description": "Record, for each claim, whether its quotes support its key fact.",
+    "strict": True,
+    "input_schema": ClaimChecks.model_json_schema(),
+}
+
+# Sees only the claims and their verified quotes, not the document, so a claim can't lean on
+# anything it didn't cite. Tuned on review 27: flagging any detail the quotes leave out sent
+# 15 of 86 cells to review; flagging only key facts sent 5, one of them a real error.
+CHECK_PROMPT = """You check the evidence behind an answer in a regulatory document review. Each \
+claim below comes with quotes copied from the document. For each claim, first write a one-line \
+reason, then decide ok.
+
+A claim is ok when its key fact (a value, limit, timepoint, condition, or yes/no conclusion) \
+appears in its quotes or follows directly from them. Rewording, summarizing, unit formatting and \
+combining quotes are fine, and so is a supporting detail the quotes leave out (a chamber name, a \
+batch ID, a section number). A claim is not ok when the quotes contradict its key fact, or don't \
+contain it. Use only the quotes, no outside knowledge.
+
+{claims}
+
+Call record_checks with one verdict per claim, in order."""
 
 # USD per million tokens: input, output, cache read, 5-minute cache write.
 PRICES = {
@@ -190,6 +214,30 @@ async def answer_cell(doc_text: str, column: Column) -> CellResult:
         cache_write_tokens=usage.cache_creation_input_tokens or 0,
         latency_ms=latency_ms,
     )
+
+
+async def check_claims(claims: list[tuple[str, list[str]]]) -> tuple[list[ClaimCheck | None], dict]:
+    """Ask the fast model whether each (claim, quotes) pair's quotes support the claim's key
+    fact. Returns one verdict per claim, in order (None where the model gave none), and the
+    call's token usage and latency."""
+    lines = []
+    for n, (claim, quotes) in enumerate(claims, 1):
+        lines.append(f"{n}. {claim}")
+        lines += [f'   - "{q}"' for q in quotes]
+    model = model_for("fast")
+    started = time.monotonic()
+    msg = await create(
+        model=model,
+        max_tokens=4096,
+        tools=[CHECK_TOOL],
+        tool_choice=tool_choice(model, CHECK_TOOL["name"]),
+        messages=[{"role": "user", "content": CHECK_PROMPT.format(claims="\n".join(lines))}],
+    )
+    by_no = {v.claim_no: v for v in
+             ClaimChecks.model_validate(tool_input(msg, CHECK_TOOL["name"])).verdicts}
+    usage = {"input_tokens": msg.usage.input_tokens, "output_tokens": msg.usage.output_tokens,
+             "latency_ms": int((time.monotonic() - started) * 1000)}
+    return [by_no.get(n) for n in range(1, len(claims) + 1)], usage
 
 
 async def judge(question: str, reference: str, candidate: str) -> tuple[bool, str]:

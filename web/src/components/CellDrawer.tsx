@@ -176,12 +176,18 @@ function Evidence(props: { cell: CellDetail; active: number | null; onSelect: (i
       <ol className="claims">
         {cell.claims.map((claim, i) => {
           const quotes = cell.citations.filter((c) => c.claim_no === i + 1);
+          const check = cell.checks?.[i] ?? null;
           return (
             <li key={i} className="claim">
               <div className="claim-text">
                 <span className="claim-no">{i + 1}</span>
                 <span>{claim}</span>
               </div>
+              {check && (
+                <div className={`claim-check ${check.ok ? "ok" : "warn"}`}>
+                  {check.ok ? "Supported by its quotes" : `Not supported: ${check.reason}`}
+                </div>
+              )}
               {quotes.length > 0 ? (
                 <ol className="citations">{quotes.map(item)}</ol>
               ) : (

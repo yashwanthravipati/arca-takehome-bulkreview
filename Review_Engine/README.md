@@ -49,17 +49,31 @@ How a worker processes a cell:
 3. **Verify.** Each quote is located in the stored text (exact match, else fuzzy ≥ 95) and
    mapped to its page. A quote under 20 characters counts only if it occurs exactly once.
    `| pH | 4.5-5.5 |` pins one table row, but `25°C` proves nothing.
-4. **Status.**
-   - `done`: every claim has at least one quote, every quote is verified, and a list answer
-     has a claim for each item.
-   - `needs_review`: anything less. For example, a quote can't be found in the document, or a
-     claim or list item has no quote.
+4. **Check.** Verification proves a quote exists, not that it supports the claim. So a second
+   fast-tier call sees only the claims and their verified quotes, not the document, and decides
+   for each whether the quotes contain its key fact (a value, limit, timepoint, condition or
+   yes/no conclusion).
+   - **On review 27:** it flagged 5 of 86 answered cells. One was a real error the eval had
+     missed: "no numeric limit", against a table row that says "NMT 0.20% each". One was the
+     checker's own mistake, and the rest were defensible nitpicks.
+   - **What it doesn't catch:** a claim that is true to its quote but doesn't belong in the
+     answer, like a one-off supplementary test listed as a scheduled timepoint.
+   - **Prompt design:** writing the reason before the verdict mattered. With the verdict
+     first, the same rules flagged 37 cells, and several verdicts contradicted their own
+     reasons.
+   - **Cost:** about $0.0003 per cell, which is included in the cell's token counts.
+5. **Status.**
+   - `done`: every claim has at least one quote, every quote is verified, the check passes
+     every claim, and a list answer has a claim for each item.
+   - `needs_review`: anything less. For example, a quote can't be found in the document, a
+     claim or list item has no quote, or the check finds a claim unsupported.
    - `not_found`: the model says the document doesn't contain the answer.
    - `failed`: all 3 attempts errored.
    - `held`: not run yet. A new or edited column can be tried on its first 3 documents; the
      other cells wait as `held` until the user runs them. Workers never claim held cells.
-5. **Write.** The result, its claims and its citations (each tagged with its claim's number)
-   are written in one transaction, and only if this worker still holds the lease.
+6. **Write.** The result, its claims, their checks and its citations (each tagged with its
+   claim's number) are written in one transaction, and only if this worker still holds the
+   lease.
 
 **Why the strong tier doesn't force the tool call.** Claude Haiku 5.5 accepts
 `tool_choice: {"type": "tool"}`, so fast-tier calls force `record_answer`. Claude Sonnet 5.5

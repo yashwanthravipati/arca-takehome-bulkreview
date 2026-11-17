@@ -109,6 +109,8 @@ export interface CellDetail {
   answer: Answer;
   /** the answer split into its facts; each citation names the claim it supports */
   claims: string[] | null;
+  /** per claim: whether its quotes support its key fact (null where it wasn't checked) */
+  checks: ({ ok: boolean; reason: string } | null)[] | null;
   reasoning: string | null;
   model: string | null;
   input_tokens: number | null;
