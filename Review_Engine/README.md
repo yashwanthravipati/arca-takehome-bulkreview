@@ -15,6 +15,9 @@ same normalization the stored text went through.
    its reasoning, and each citation in context.
 5. `python scripts/eval_review.py 1` scores the review against `corpus/ground_truth.json`:
    accuracy per column, status counts, and the planted cases.
+6. `python scripts/requeue.py --review 1 --column deviations` re-queues a column after you
+   edit it in the template. `--status needs_review` or `--cell <id>` re-queue other cells.
+   Then run step 3 again.
 
 How a worker processes a cell:
 
@@ -26,7 +29,8 @@ How a worker processes a cell:
    - The answer comes back as a forced `record_answer` tool call: `found`, `answer`,
      `citations`, `reasoning`.
 3. **Verify.** Each quote is located in the stored text (exact match, else fuzzy ≥ 95) and
-   mapped to its page.
+   mapped to its page. A quote under 20 characters counts only if it occurs exactly once.
+   `| pH | 4.5-5.5 |` pins one table row, but `25°C` proves nothing.
 4. **Status.**
    - `done`: every citation is verified.
    - `needs_review`: a citation can't be found in the document, or there are none.

@@ -19,7 +19,7 @@ from app.models import Column
 from app.text import locate, normalize
 
 MAX_ATTEMPTS = 3
-MIN_QUOTE_CHARS = 20  # shorter "quotes" ("25°C", "NMT 0.5%") match by chance, not as evidence
+MIN_QUOTE_CHARS = 20  # shorter quotes must be exact and unique in the document (see verify)
 IDLE_POLL_S = 2
 
 CLAIM = """
@@ -72,8 +72,15 @@ def page_of(pos: int, pages: list[dict]) -> int | None:
 
 
 def verify(quote: str, text: str, pages: list[dict]) -> dict:
-    """Locate a quote in the stored document text and map it to a page."""
-    hit = locate(quote, text) if len(normalize(quote)) >= MIN_QUOTE_CHARS else None
+    """Locate a quote in the stored document text and map it to a page.
+
+    A short quote counts only if it occurs exactly once: "| pH | 4.5-5.5 |" from a table pins
+    one place in the document, while "25°C" appears all over it and proves nothing.
+    """
+    hit = locate(quote, text)
+    q = normalize(quote)
+    if hit and len(q) < MIN_QUOTE_CHARS and text.count(q) != 1:
+        hit = None
     if hit is None:
         return {"quote": quote, "char_start": None, "char_end": None, "page_no": None,
                 "verified": False, "match_method": "none"}

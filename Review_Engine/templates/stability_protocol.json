@@ -27,7 +27,7 @@
       "key": "deviations",
       "question": "Which deviations from the protocol have been recorded?",
       "answer_type": "list",
-      "instructions": "Include deviations mentioned anywhere, including appendices. One item per deviation: its ID and a short description. Return an empty list only if the document states there were none.",
+      "instructions": "Include deviations mentioned anywhere, including appendices. One item per deviation: its ID and a short description. If the document states that no deviations have occurred, return an empty list [] (not an item saying so) and cite that statement. If the document does not address deviations at all, set found to false.",
       "model_tier": "fast"
     },
     {

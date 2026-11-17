@@ -2,7 +2,8 @@
 
 Answer, per cell (scored on the answer even when the status is needs_review):
   - ground truth null  -> correct only if the cell is not_found
-  - list columns       -> normalized sets must be equal: deviation IDs, timepoint numbers
+  - list columns       -> normalized sets must be equal: deviation IDs; the numbers in
+                          timepoint lists ("0, 3, 6 months", "Day 7", "48 hours")
   - text columns       -> the fast model judges whether the answer states the same facts
 Citation, per cell with ground-truth evidence: some verified citation is on the page of a
 ground-truth evidence sentence.
@@ -34,19 +35,22 @@ GT_PATH = ROOT.parent / "Ingestion" / "corpus" / "ground_truth.json"
 JUDGE_CONCURRENCY = 8
 # Their instructions were revised after trying them on these 15 protocols, so their scores are
 # optimistic about unseen documents.
-TUNED = {"bracketing_justification", "post_approval_commitment"}
+TUNED = {"bracketing_justification", "post_approval_commitment", "deviations"}
 DEV_ID = re.compile(r"DEV-\d{4}-\d{4}")
-# Temperatures and humidities, so "25°C/60% RH: 0, 3, 6 months" leaves only the timepoints.
-CONDITION = re.compile(r"(?:\d+(?:\.\d+)?\s*(?:-|to)\s*)?\d+(?:\.\d+)?\s*°\s*C"
-                       r"|±\s*\d+(?:\.\d+)?\s*%?|\d+(?:\.\d+)?\s*%(?:\s*RH)?")
+# A timepoint list is a run of numbers with a time unit after it ("0, 3, 6 and 9 months",
+# "27-month") or before it ("Days 0, 7, 14", "Day 7"). Other numbers in an answer (25°C,
+# 60% RH, batch TXS-23-011, ICH Q1B Option 2) are not timepoints.
+NUMBER_RUN = r"\d+(?:\.\d+)?(?:\s*(?:,|and|&)\s*\d+(?:\.\d+)?)*"
+TIMEPOINTS = re.compile(rf"({NUMBER_RUN})\s*-?\s*(?:months?|weeks?|days?|hours?|h)\b"
+                        rf"|\b(?:months?|weeks?|days?)\s+({NUMBER_RUN})", re.I)
 
 
 def as_set(key: str, value) -> set:
     """A list answer or ground-truth value as a set that ignores wording."""
     items = [value] if isinstance(value, str) else list(value or [])
     if key == "timepoints":
-        text = CONDITION.sub(" ", normalize(" ; ".join(items)))
-        return {float(n) for n in re.findall(r"\d+(?:\.\d+)?", text)}
+        runs = TIMEPOINTS.findall(normalize(" ; ".join(items)))
+        return {float(n) for run in runs for n in re.findall(r"\d+(?:\.\d+)?", "".join(run))}
     # deviations (and any other list): the deviation ID, else the normalized item text
     return {m.group(0) if (m := DEV_ID.search(i)) else normalize(i).lower() for i in items}
 
