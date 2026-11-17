@@ -1,44 +1,86 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Citation, DocumentText, Page } from "../api";
 
 type Located = Citation & { char_start: number; char_end: number };
 
-/** The stored document text, page by page, with every cited span highlighted and tagged with
- * the number of the claim it supports. */
-export function DocumentViewer(props: {
+/** The stored document as pages, every quote highlighted and tagged with its claim's number.
+ * The focused claim's quotes stand out and the others are dimmed; the active quote is scrolled
+ * into view. By default only cited pages are shown, with runs of other pages folded into one
+ * row that expands them. */
+export function DocumentPages(props: {
   doc: DocumentText;
   citations: Citation[];
-  claims?: string[] | null;
+  claims: string[] | null;
+  focusClaim: number | null;
   active: number | null;
 }) {
-  const { doc, citations, claims = null, active } = props;
+  const { doc, citations, claims, focusClaim, active } = props;
+  const [allPages, setAllPages] = useState(false);
   const marks = useRef(new Map<number, HTMLElement>());
   const located = citations.filter((c): c is Located => c.char_start !== null && c.char_end !== null);
+  const cited = new Set(
+    doc.pages
+      .filter((p) => located.some((c) => c.char_start < p.char_end && c.char_end > p.char_start))
+      .map((p) => p.page_no),
+  );
+  const fold = !allPages && cited.size > 0;
 
-  // Scroll to the selected citation, or to the first one when the cell opens.
+  // Scroll to the active quote: at once when the view opens, smoothly after that.
   const target = active ?? located[0]?.id ?? null;
+  const opened = useRef(false);
   useEffect(() => {
     if (target === null) return;
-    marks.current.get(target)?.scrollIntoView({ block: "center", behavior: active === null ? "auto" : "smooth" });
-  }, [target, active, doc]);
+    marks.current.get(target)?.scrollIntoView({ block: "center", behavior: opened.current ? "smooth" : "auto" });
+    opened.current = true;
+  }, [target, doc, allPages]);
+
+  const blocks: ReactNode[] = [];
+  let folded: Page[] = [];
+  const flush = () => {
+    if (folded.length === 0) return;
+    const [a, b] = [folded[0].page_no, folded[folded.length - 1].page_no];
+    blocks.push(
+      <button key={`fold-${a}`} className="pages-folded" onClick={() => setAllPages(true)}>
+        {a === b ? `Page ${a}` : `Pages ${a}–${b}`} · nothing cited · show
+      </button>,
+    );
+    folded = [];
+  };
+  for (const page of doc.pages) {
+    if (fold && !cited.has(page.page_no)) {
+      folded.push(page);
+      continue;
+    }
+    flush();
+    blocks.push(
+      <section key={page.page_no} className="page-card" aria-label={`Page ${page.page_no}`}>
+        <div className="page-no">
+          Page {page.page_no} of {doc.pages.length}
+        </div>
+        <div className="page-text">{renderPage(doc.text, page, located, claims, focusClaim, active, marks.current)}</div>
+      </section>,
+    );
+  }
+  flush();
 
   return (
-    <div className="doc-viewer">
-      <div className="doc-head">
-        <div className="doc-name">{doc.title}</div>
-        <div className="muted small">
-          {doc.id} v{doc.version} · {doc.product} · effective {doc.effective_date ?? "–"}
-          {!doc.is_current && " · superseded"}
-        </div>
-      </div>
-      {doc.pages.map((page) => (
-        <section key={page.page_no} className="doc-page">
-          <div className="page-divider">
-            <span>Page {page.page_no}</span>
+    <div className="doc-pane">
+      <div className="doc-toolbar">
+        <div className="doc-toolbar-title">
+          <div className="doc-name">{doc.title}</div>
+          <div className="muted small">
+            {doc.id} v{doc.version} · {doc.product} · effective {doc.effective_date ?? "–"}
+            {!doc.is_current && " · superseded"}
           </div>
-          <p className="page-text">{renderPage(doc.text, page, located, claims, active, marks.current)}</p>
-        </section>
-      ))}
+        </div>
+        {cited.size > 0 && (
+          <label className="check small">
+            <input type="checkbox" checked={!allPages} onChange={(e) => setAllPages(!e.target.checked)} />
+            Cited pages only
+          </label>
+        )}
+      </div>
+      {blocks}
     </div>
   );
 }
@@ -51,6 +93,7 @@ function renderPage(
   page: Page,
   citations: Located[],
   claims: string[] | null,
+  focusClaim: number | null,
   active: number | null,
   marks: Map<number, HTMLElement>,
 ) {
@@ -75,17 +118,16 @@ function renderPage(
     }
     const startingHere = covering.filter((c) => Math.max(start, c.char_start) === a);
     const kind = covering.every((c) => c.verified) ? "verified" : "unverified";
+    const focus = focusClaim === null ? "" : covering.some((c) => c.claim_no === focusClaim) ? "focus" : "dim";
     const claimNos = (cs: Located[]) => [...new Set(cs.map((c) => c.claim_no))].filter((n) => n !== null);
     const tags = claimNos(startingHere);
     const title = claims ? claimNos(covering).map((n) => `${n}. ${claims[n - 1] ?? ""}`).join("\n") : "";
     out.push(
       <mark
         key={a}
-        className={`cite ${kind} ${covering.some((c) => c.id === active) ? "active" : ""}`}
+        className={`cite ${kind} ${focus} ${covering.some((c) => c.id === active) ? "active" : ""}`}
         title={title || undefined}
-        ref={(el) => {
-          if (el) startingHere.forEach((c) => marks.set(c.id, el));
-        }}
+        ref={(el) => startingHere.forEach((c) => (el ? marks.set(c.id, el) : marks.delete(c.id)))}
       >
         {tags.length > 0 && <sup className="claim-tag">{tags.join(",")}</sup>}
         {pieces}

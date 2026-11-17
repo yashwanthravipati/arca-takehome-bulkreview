@@ -1,6 +1,7 @@
 // Screenshots for the write-up, taken against a running dev setup (`make dev`).
-// It creates a new stability review, then captures the grid mid-run, a done cell's drawer
-// with its citation highlighted, a not-found cell's drawer, and the review list.
+// It creates a new stability review, then captures the grid mid-run, a done cell's evidence
+// view with its quote highlighted in the document, a not-found cell's drawer, and the review
+// list.
 // Usage (from web/): npm run screenshots   -> web/screenshots/*.png
 // REVIEW_ID=<id> npm run screenshots reuses a finished stability review instead: no model
 // calls, and no mid-run grid screenshot.
@@ -47,10 +48,13 @@ await page.waitForFunction(
   { timeout: 300_000 },
 );
 await page.click('button[data-doc="STAB-013"][data-key="deviations"]');
-await page.waitForSelector(".doc-viewer mark.cite");
+await page.getByRole("button", { name: "Open evidence" }).click();
+await page.waitForSelector(".evidence mark.cite");
 await page.waitForTimeout(600);
-await shot(page, "2-drawer-citation.png");
-console.log("drawer with the appendix deviation highlighted");
+await shot(page, "2-evidence-citation.png");
+console.log("evidence view with the appendix deviation highlighted");
+await page.keyboard.press("Escape");
+await page.waitForSelector(".evidence", { state: "detached" });
 
 await page.click('button[data-doc="STAB-011"][data-key="bracketing_justification"]');
 await page.waitForSelector(".drawer .not-found");

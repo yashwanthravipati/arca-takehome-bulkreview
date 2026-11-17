@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { api, type Question } from "../api";
 import { EMPTY_VIEW, conditionsFor, isFiltered, viewRows, type StatusFilter, type View, type Where } from "../rows";
 import { useReview } from "../useReview";
+import { NO_FOCUS, type Focus } from "./answer";
 import { CellDrawer } from "./CellDrawer";
+import { EvidenceView } from "./EvidenceView";
 import { ColumnModal } from "./ColumnModal";
 import { Grid } from "./Grid";
 import { ReviewHeader } from "./ReviewHeader";
@@ -17,12 +19,15 @@ const STATUS_FILTERS: [StatusFilter, string][] = [
 
 type Editing = { column: Question | null } | null; // column null: adding a new one
 
-/** One review's grid. `cellId` (from the URL) is the cell whose drawer is open. */
-export function ReviewPage({ id, cellId }: { id: number; cellId: number | null }) {
+/** One review's grid. `cellId` (from the URL) is the cell whose drawer is open; with
+ * `evidence`, its evidence view is open on top. */
+export function ReviewPage({ id, cellId, evidence }: { id: number; cellId: number | null; evidence: boolean }) {
   const { grid, error, live, reload } = useReview(id);
   const [view, setView] = useState<View>(EMPTY_VIEW);
   const [editing, setEditing] = useState<Editing>(null);
+  const [focus, setFocus] = useState<Focus>(NO_FOCUS); // where the evidence view opens
   const rows = useMemo(() => (grid ? viewRows(grid, view) : []), [grid, view]);
+  const allRows = useMemo(() => (grid ? viewRows(grid, EMPTY_VIEW) : []), [grid]);
 
   if (error) return <main className="page"><div className="error">Could not load review {id}: {error}</div></main>;
   if (!grid) return <main className="page muted">Loading review…</main>;
@@ -35,6 +40,24 @@ export function ReviewPage({ id, cellId }: { id: number; cellId: number | null }
     api.runHeld(id, q.id).catch((e: Error) => window.alert(`Could not run the rest of "${q.key}": ${e.message}`));
   const openCell = grid.cells.find((c) => c.id === cellId);
   const update = (patch: Partial<View>) => setView((v) => ({ ...v, ...patch }));
+  const openEvidence = (cell: number, at: Focus = NO_FOCUS) => {
+    setFocus(at);
+    window.location.hash = `#/reviews/${id}/cells/${cell}/evidence`;
+  };
+
+  // The evidence view's previous and next documents: the same column, in the grid's current
+  // order (all documents if the open one is filtered out).
+  const order = (() => {
+    if (!openCell) return [];
+    const ids = (shown: typeof rows) => shown.flatMap((r) => r.cells[openCell.column_id]?.id ?? []);
+    const visible = ids(rows);
+    return visible.includes(openCell.id) ? visible : ids(allRows);
+  })();
+  const at = openCell ? order.indexOf(openCell.id) : -1;
+  const step = (delta: number) => {
+    const next = order[at + delta];
+    return at >= 0 && next !== undefined ? () => openEvidence(next) : null;
+  };
 
   return (
     <div className="review-page">
@@ -76,8 +99,29 @@ export function ReviewPage({ id, cellId }: { id: number; cellId: number | null }
           onEdit={(column) => setEditing({ column })}
           onRunHeld={runHeld}
         />
-        {openCell && <CellDrawer key={openCell.id} summary={openCell} onClose={() => open(null)} />}
+        {openCell && (
+          <CellDrawer
+            key={openCell.id}
+            summary={openCell}
+            onClose={() => open(null)}
+            onOpenEvidence={(at) => openEvidence(openCell.id, at)}
+          />
+        )}
       </div>
+      {openCell && evidence && (
+        <EvidenceView
+          key={openCell.id}
+          summary={openCell}
+          initialFocus={focus}
+          position={at >= 0 ? { index: at, total: order.length } : null}
+          onPrev={step(-1)}
+          onNext={step(1)}
+          onClose={() => {
+            setFocus(NO_FOCUS);
+            open(openCell.id);
+          }}
+        />
+      )}
       {editing && (
         <ColumnModal
           reviewId={id}

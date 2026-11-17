@@ -30,10 +30,18 @@ page it came from.
   - "Filter by column…" keeps rows by answer: yes or no, a date before today (overdue
     commitments), a list that has items, or not found.
   - The status chips show needs review, not found, failed and not run.
-- **Check an answer.** Click a cell. The drawer lists each claim of the answer with its
-  quotes. The document opens beside it with every quote highlighted and tagged with its
-  claim's number. The URL (`#/reviews/<id>/cells/<cellId>`) links straight to that answer;
-  **Copy link** copies it.
+- **Check an answer.** Click a cell for a quick look: the drawer lists the answer's claims,
+  each with its check result and quotes. **Open evidence**, or click a claim or a quote, to
+  check it against the document:
+  - The answer and its claims sit beside the document's pages.
+  - The focused claim's quotes are highlighted and the other quotes are dimmed. Each
+    highlight carries its claim's number.
+  - Pages with nothing cited are folded away; untick **Cited pages only** to see them.
+  - ↑ ↓ move between claims. ← → move to the previous or next document in the same column,
+    in the grid's current order, so a whole column can be reviewed without closing. Esc
+    closes.
+  - Links go straight to an answer (`#/reviews/<id>/cells/<cellId>`) or to its evidence
+    (`…/evidence`); **Copy link** copies the one you're on.
 - **Tune a question.** **Add column** or a column's **Edit** can run on the first 3 documents
   first. The rest wait as "not run" until you click **Run on remaining N** in the column
   header. Editing a column clears its answers and answers it again.
