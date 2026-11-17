@@ -50,9 +50,10 @@ function renderPage(text: string, page: Page, citations: Located[], active: numb
   const points = [...cuts].sort((a, b) => a - b);
 
   const out: ReactNode[] = [];
+  const md = { bold: false }; // carried across pieces, since a highlight can start inside bold text
   for (let i = 0; i < points.length - 1; i++) {
     const [a, b] = [points[i], points[i + 1]];
-    const pieces = withLineBreaks(text.slice(a, b), a);
+    const pieces = readable(text.slice(a, b), a, md);
     const covering = onPage.filter((c) => c.char_start <= a && c.char_end >= b);
     if (covering.length === 0) {
       out.push(...pieces);
@@ -75,11 +76,28 @@ function renderPage(text: string, page: Page, citations: Located[], active: numb
   return out;
 }
 
-// The stored text has its whitespace collapsed, so Markdown headings and table rows run
-// together. For reading only, the space before a heading and between table rows is shown
-// as a line break; pieces are still sliced from the stored text by offset, so citation
+// The stored text is Markdown with its whitespace collapsed, so headings and table rows run
+// together. For reading only: the space before a heading or table row becomes a line break,
+// "**" markers are hidden and the text between them is bold, and heading markers and table
+// rules are muted. Pieces are still sliced from the stored text by offset, so citation
 // positions are unaffected.
-const BREAK = /(?<=\|) (?=\|)| (?=#{1,6} )/;
-function withLineBreaks(text: string, offset: number): ReactNode[] {
-  return text.split(BREAK).flatMap((part, i) => (i === 0 ? [part] : [<br key={`${offset}-${i}`} />, part]));
+const TOKEN = /(\*\*|(?<=\|) (?=\|)| (?=#{1,6} ))/;
+const MARKUP = /^(?:#{1,6} |\|(?:\s*:?-+:?\s*\|)+$)/;
+function readable(text: string, offset: number, md: { bold: boolean }): ReactNode[] {
+  const out: ReactNode[] = [];
+  text.split(TOKEN).forEach((part, i) => {
+    const key = `${offset}-${i}`;
+    if (part === "**") {
+      md.bold = !md.bold;
+    } else if (i % 2 === 1) {
+      out.push(<br key={key} />);
+      md.bold = false; // an unclosed "**" never runs past the end of its line
+    } else if (part) {
+      const markup = part.match(MARKUP)?.[0] ?? "";
+      const rest = part.slice(markup.length);
+      if (markup) out.push(<span key={`${key}m`} className="md-mark">{markup}</span>);
+      if (rest) out.push(md.bold ? <strong key={key}>{rest}</strong> : rest);
+    }
+  });
+  return out;
 }

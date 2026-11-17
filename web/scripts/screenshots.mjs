@@ -2,6 +2,8 @@
 // It creates a new stability review, then captures the grid mid-run, a done cell's drawer
 // with its citation highlighted, a not-found cell's drawer, and the review list.
 // Usage (from web/): npm run screenshots   -> web/screenshots/*.png
+// REVIEW_ID=<id> npm run screenshots reuses a finished stability review instead: no model
+// calls, and no mid-run grid screenshot.
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 
@@ -10,27 +12,37 @@ const API = process.env.API_URL ?? "http://127.0.0.1:8010";
 const OUT = new URL("../screenshots/", import.meta.url);
 const shot = (page, name) => page.screenshot({ path: new URL(name, OUT).pathname });
 
+async function createReview() {
+  // Local time as "YYYY-MM-DD HH:MM" (the sv-SE locale formats dates that way).
+  const now = new Date().toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" });
+  const name = `Stability review ${now}`;
+  const res = await fetch(`${API}/api/reviews`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, template: "stability_protocol" }),
+  });
+  if (!res.ok) throw new Error(`creating the review failed: ${res.status} ${await res.text()}`);
+  const { id } = await res.json();
+  console.log(`created review ${id}: ${name}`);
+  return id;
+}
+
 await mkdir(OUT, { recursive: true });
-const name = `Stability review ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
-const res = await fetch(`${API}/api/reviews`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ name, template: "stability_protocol" }),
-});
-if (!res.ok) throw new Error(`creating the review failed: ${res.status} ${await res.text()}`);
-const { id } = await res.json();
-console.log(`created review ${id}: ${name}`);
+const existing = process.env.REVIEW_ID;
+const id = existing ?? (await createReview());
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1600, height: 940 }, deviceScaleFactor: 1.5 });
 
 await page.goto(`${WEB}/#/reviews/${id}`);
-await page.waitForFunction(() => document.querySelectorAll(".cell-done").length >= 12, null, { timeout: 120_000 });
-await shot(page, "1-grid-mid-run.png");
-console.log("grid mid-run");
+if (!existing) {
+  await page.waitForFunction(() => document.querySelectorAll(".cell-done").length >= 12, null, { timeout: 120_000 });
+  await shot(page, "1-grid-mid-run.png");
+  console.log("grid mid-run");
+}
 
 await page.waitForFunction(
-  () => document.querySelectorAll(".cell-pending, .cell-running").length === 0,
+  () => document.querySelector(".cell") && document.querySelectorAll(".cell-pending, .cell-running").length === 0,
   null,
   { timeout: 300_000 },
 );

@@ -61,9 +61,9 @@ export function ReviewList() {
               <td className="muted">{new Date(r.created_at).toLocaleString()}</td>
               <td>
                 <div className="progress-cell">
-                  <Progress value={r.counts.done} total={r.total} />
+                  <Progress value={r.finished} total={r.total} />
                   <span className="muted tabular">
-                    {r.counts.done}/{r.total} done
+                    {r.finished}/{r.total} finished
                   </span>
                 </div>
               </td>

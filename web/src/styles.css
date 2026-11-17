@@ -148,8 +148,9 @@ h2 { font-size: 14px; font-weight: 600; margin: 0; }
 .q-text { color: var(--muted); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .q-meta { color: var(--faint); font-size: 11px; }
 
-.cell { position: relative; display: flex; align-items: flex-start; gap: 6px; width: 220px; height: 54px; padding: 6px 8px;
-  border: 1px solid transparent; border-radius: 6px; background: transparent; font: inherit; font-size: 12px; text-align: left;
+/* Height = 3 answer lines (3 x 16px) + padding + border, so the line clamp ends on a whole line. */
+.cell { position: relative; display: flex; align-items: flex-start; gap: 6px; width: 220px; height: 62px; padding: 6px 8px;
+  border: 1px solid transparent; border-radius: 6px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; text-align: left;
   color: var(--text); cursor: pointer; overflow: hidden; }
 .cell:hover { background: var(--surface-2); border-color: var(--border); }
 .cell.active { border-color: var(--ink); background: #f1f4f7; }
@@ -214,6 +215,8 @@ h2 { font-size: 14px; font-weight: 600; margin: 0; }
   text-transform: uppercase; letter-spacing: 0.06em; margin: 18px 0 8px; }
 .page-divider::before, .page-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 .page-text { margin: 0; font-size: 13px; line-height: 1.65; color: #2f3740; overflow-wrap: anywhere; }
+.page-text strong { font-weight: 600; color: var(--text); }
+.md-mark { color: var(--faint); }
 mark.cite { color: inherit; border-radius: 2px; padding: 1px 0; }
 mark.cite.verified { background: var(--highlight); }
 mark.cite.unverified { background: transparent; text-decoration: underline dashed #d08a00; text-underline-offset: 3px; }
