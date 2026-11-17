@@ -169,6 +169,10 @@ export interface DocumentText {
   is_current: boolean;
   text: string;
   pages: Page[];
+  /** where each source line starts in `text`, and which of them start a block (after a blank
+   * line or at a page start); null for documents ingested before the layout was kept */
+  line_starts: number[] | null;
+  block_starts: number[] | null;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

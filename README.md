@@ -33,7 +33,8 @@ page it came from.
 - **Check an answer.** Click a cell for a quick look: the drawer lists the answer's claims,
   each with its check result and quotes. **Open evidence**, or click a claim or a quote, to
   check it against the document:
-  - The answer and its claims sit beside the document's pages.
+  - The answer and its claims sit beside the document's pages, shown with their headings,
+    paragraphs, lists and tables.
   - The focused claim's quotes are highlighted and the other quotes are dimmed. Each
     highlight carries its claim's number.
   - Pages with nothing cited are folded away; untick **Cited pages only** to see them.

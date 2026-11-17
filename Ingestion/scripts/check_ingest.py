@@ -56,7 +56,7 @@ def main():
                         " AND char_start <= %(pos)s AND %(pos)s < char_end",
                         {**key, "pos": hit[0]}).fetchone()
                     page = page[0] if page else None
-                expected = next((no for no, t in src_pages if normalize(sentence) in t), None)
+                expected = next((no for no, t, _ in src_pages if normalize(sentence) in t), None)
                 ok = hit is not None and page is not None and page == expected
                 if doc["planted"] == "deviation_in_appendix" and field.startswith("deviations"):
                     ok = ok and page == last_page

@@ -392,9 +392,11 @@ def cell_detail(conn, cell_id: int) -> dict:
 
 
 def document(conn, doc_id: str, version: str) -> dict:
-    """A document version: metadata, the stored text, and its page boundaries."""
+    """A document version: metadata, the stored text, its page boundaries, and its layout
+    (where each source line starts, for display)."""
     doc = _rows(conn, """SELECT id, version, title, product, doc_type, effective_date, is_current,
-                                text FROM documents WHERE id = %s AND version = %s""",
+                                text, line_starts, block_starts
+                         FROM documents WHERE id = %s AND version = %s""",
                 (doc_id, version))
     if not doc:
         raise ReviewError(f"no document {doc_id} v{version}", 404)

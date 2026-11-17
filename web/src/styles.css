@@ -249,8 +249,21 @@ button.claim-text { width: 100%; padding: 0; border: 0; background: none; font: 
 .pages-folded { display: block; width: 100%; max-width: 860px; margin: 0 auto 14px; padding: 8px 12px; border: 1px dashed var(--border-strong);
   border-radius: 3px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
 .pages-folded:hover { background: #f5f6f8; }
-.page-text { font-size: 13.5px; line-height: 1.7; color: #2f3740; overflow-wrap: anywhere; }
+.page-text { font-size: 13.5px; line-height: 1.65; color: #2f3740; overflow-wrap: anywhere; }
 .page-text strong { font-weight: 600; color: var(--text); }
+.page-text h1, .page-text h2, .page-text h3, .page-text h4, .page-text h5, .page-text h6 { color: var(--text); font-weight: 650; }
+.page-text h1 { font-size: 19px; line-height: 1.35; margin: 0 0 14px; }
+.page-text h2 { font-size: 15.5px; line-height: 1.4; margin: 22px 0 8px; }
+.page-text h3 { font-size: 14px; margin: 18px 0 6px; }
+.page-text h4, .page-text h5, .page-text h6 { font-size: 13.5px; margin: 14px 0 4px; }
+.page-text p { margin: 0 0 10px; }
+.page-text ul { margin: 0 0 10px; padding-left: 22px; }
+.page-text li { margin: 2px 0; }
+.page-text > :first-child { margin-top: 0; }
+.doc-table-wrap { overflow-x: auto; margin: 4px 0 14px; }
+.doc-table { width: 100%; border-collapse: collapse; font-size: 12.5px; line-height: 1.45; overflow-wrap: normal; }
+.doc-table th, .doc-table td { padding: 5px 8px; border: 1px solid #d9dee4; text-align: left; vertical-align: top; }
+.doc-table th { background: #f3f5f7; font-weight: 600; color: var(--text); }
 .md-mark { color: var(--faint); }
 mark.cite { color: inherit; border-radius: 2px; padding: 1px 0; }
 mark.cite.verified { background: var(--highlight); }

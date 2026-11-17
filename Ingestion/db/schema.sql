@@ -10,9 +10,16 @@ CREATE TABLE IF NOT EXISTS documents (
   is_current     boolean NOT NULL,
   content_hash   text NOT NULL,
   text           text NOT NULL,
+  -- Layout, for display only. text has its whitespace collapsed, so these record where each
+  -- source line starts in it, and which of those lines start a block (the first line of a
+  -- page, or a line after a blank line). Citation offsets never depend on them.
+  line_starts    int[],
+  block_starts   int[],
   ingested_at    timestamptz DEFAULT now(),
   PRIMARY KEY (id, version)
 );
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS line_starts int[];   -- databases created earlier
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS block_starts int[];
 
 -- Page p of a document is text[char_start:char_end] (0-based, end-exclusive).
 CREATE TABLE IF NOT EXISTS pages (

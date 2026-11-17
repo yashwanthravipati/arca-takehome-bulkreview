@@ -4,5 +4,10 @@
 2. `cd Ingestion && docker compose up -d` starts Postgres 16 on 127.0.0.1:5433.
 3. `uv venv && uv pip install -r requirements.txt && source .venv/bin/activate`
 4. `python scripts/ingest.py` loads the 21 document versions in `corpus/docs/`; a re-run skips them all.
+   - **Stored text:** each page is normalized (whitespace collapsed), and citations are
+     located in that text.
+   - **Layout:** where each source line starts is kept alongside (`line_starts`,
+     `block_starts`), so the UI can show headings, lists and tables without changing a
+     single citation offset.
 5. `python scripts/check_ingest.py` finds every evidence sentence from `corpus/ground_truth.json` and its page.
 6. Optional: `python scripts/generate_corpus.py [--force] [DOC_ID ...]` rewrites `corpus/docs/` with Claude.
