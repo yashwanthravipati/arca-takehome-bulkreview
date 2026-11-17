@@ -42,6 +42,7 @@ export function CellDrawer({ summary, onClose }: { summary: CellSummary; onClose
           </span>
           {cell && <span className="muted"> · {cell.key.replace(/_/g, " ")}</span>}
         </span>
+        <CopyLink />
         <button className="btn small" onClick={rerun} disabled={rerunning || busy}>
           {rerunning ? "Queuing…" : "Rerun cell"}
         </button>
@@ -83,7 +84,33 @@ export function CellDrawer({ summary, onClose }: { summary: CellSummary; onClose
   );
 }
 
+/** The URL already points at this cell (#/reviews/<id>/cells/<cellId>); copy it to share. */
+function CopyLink() {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      window.prompt("Copy this link:", window.location.href); // clipboard blocked
+    }
+  }
+  return (
+    <button className="btn small" onClick={copy}>
+      {copied ? "Copied" : "Copy link"}
+    </button>
+  );
+}
+
 function AnswerView({ cell }: { cell: CellDetail }) {
+  if (cell.status === "held")
+    return (
+      <p className="muted">
+        Not run yet: this column was tried on a few documents first. Run the rest from the column header, or rerun just
+        this cell.
+      </p>
+    );
   if (cell.status === "pending") return <p className="muted">Queued. A worker will pick this cell up shortly.</p>;
   if (cell.status === "running") return <p className="muted">A worker is answering this cell…</p>;
   if (cell.status === "failed") return <p className="failed-label">Failed after {cell.attempts} attempts.</p>;

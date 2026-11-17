@@ -1,24 +1,32 @@
 """Review operations shared by the CLI scripts and the API: templates, creating reviews and
-columns, re-queueing cells, and reading the grid, one cell's evidence and the run totals.
+columns, editing and re-queueing columns and cells, estimating a review before it runs, and
+reading the grid, one cell's evidence and the run totals.
 
 Functions take an open psycopg connection and leave committing to the caller. The SQL for the
 grid and the totals is exposed as constants with pure row -> dict helpers, so that async
 callers (the API's live event stream) run exactly the same queries.
+
+A column can be tried on a sample of documents first: its other cells are 'held'. Workers
+never claim held cells (they claim only pending or expired running ones); run_held() queues
+them once the sample answers look right.
 """
 
+import math
+import os
 import re
+from collections import Counter
 from pathlib import Path
 
 from psycopg.rows import dict_row, tuple_row
 from psycopg.types.json import Jsonb
 
-from app.llm import cost_usd
-from app.models import Column, Template
+from app.llm import cost_usd, model_for
+from app.models import AnswerType, Column, Template
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = ROOT / "templates"
 SCHEMA = ROOT / "db" / "schema_review.sql"
-STATUSES = ("done", "not_found", "needs_review", "failed", "running", "pending")
+STATUSES = ("done", "not_found", "needs_review", "failed", "running", "pending", "held")
 FINISHED = ("done", "not_found", "needs_review", "failed")
 FILTERABLE = {"id", "product", "doc_type", "is_current", "version"}
 COLUMN_KEY = re.compile(r"[a-z][a-z0-9_]{0,62}")
@@ -91,18 +99,25 @@ def insert_cells(conn, review_id: int, doc_filter: dict, column_id: int | None =
         {"review_id": review_id, "column_id": column_id, **params}).rowcount
 
 
+def review_filter(template: Template, doc_filter: dict | None) -> dict:
+    """A review's document filter: the template's doc_type, current versions only, with
+    `doc_filter` on top (it adds or overrides conditions; a list means "any of", None drops
+    one). Raises ReviewError for a condition that can't be filtered on."""
+    merged = {"doc_type": template.doc_type, "is_current": True, **(doc_filter or {})}
+    merged = {k: v for k, v in merged.items() if v is not None}
+    filter_sql(merged)
+    return merged
+
+
 def create_review(conn, name: str, template_name: str, doc_filter: dict | None = None) -> dict:
-    """Create a review with its columns and pending cells. The default filter is the
-    template's doc_type, current versions only; `doc_filter` adds or overrides conditions
-    (a list means "any of", None drops one). An existing review with the same name, template
-    and filter is reused and only gains missing cells."""
+    """Create a review with its columns and pending cells; see review_filter() for which
+    documents it covers. An existing review with the same name, template and filter is
+    reused and only gains missing cells."""
     name = name.strip()
     if not name:
         raise ReviewError("a review needs a name")
     template = load_template(template_name)
-    merged = {"doc_type": template.doc_type, "is_current": True, **(doc_filter or {})}
-    doc_filter = {k: v for k, v in merged.items() if v is not None}
-    filter_sql(doc_filter)  # reject a bad filter before writing anything
+    doc_filter = review_filter(template, doc_filter)  # rejects a bad filter before any write
 
     ensure_schema(conn)
     existing = _tuples(conn, "SELECT id, template, doc_filter FROM reviews WHERE name = %s",
@@ -129,8 +144,22 @@ def create_review(conn, name: str, template_name: str, doc_filter: dict | None =
             "doc_filter": doc_filter, "new_cells": new_cells}
 
 
-def add_column(conn, review_id: int, column: Column) -> dict:
-    """Add a column to a review and create pending cells for that column only."""
+def hold_beyond_sample(conn, column_id: int, sample: int) -> int:
+    """Hold every pending cell of a column except those of its first `sample` documents (by
+    document id). Returns the number of cells held."""
+    return conn.execute(
+        """UPDATE cells SET status = 'held', updated_at = now()
+           WHERE column_id = %(column_id)s AND status = 'pending'
+             AND id NOT IN (SELECT id FROM cells WHERE column_id = %(column_id)s
+                            ORDER BY doc_id, version LIMIT %(sample)s)""",
+        {"column_id": column_id, "sample": sample}).rowcount
+
+
+def add_column(conn, review_id: int, column: Column, sample: int | None = None) -> dict:
+    """Add a column to a review and create pending cells for that column only. With `sample`,
+    only the first `sample` documents' cells are queued and the rest are held (run_held())."""
+    if sample is not None and sample < 1:
+        raise ReviewError("sample must be at least 1 document")
     review = _tuples(conn, "SELECT doc_filter FROM reviews WHERE id = %s", (review_id,))
     if not review:
         raise ReviewError(f"no review {review_id}", 404)
@@ -150,8 +179,11 @@ def add_column(conn, review_id: int, column: Column) -> dict:
     if not row:
         raise ReviewError(f"review {review_id} already has a column {column.key!r}", 409)
     column_id = row[0][0]
-    return {"column_id": column_id,
-            "new_cells": insert_cells(conn, review_id, review[0][0], column_id)}
+    new_cells = insert_cells(conn, review_id, review[0][0], column_id)
+    # Same transaction as the insert, so no worker ever sees the held cells as pending.
+    held = hold_beyond_sample(conn, column_id, sample) if sample else 0
+    return {"column_id": column_id, "new_cells": new_cells, "queued": new_cells - held,
+            "held": held}
 
 
 RESET = """
@@ -192,6 +224,39 @@ def requeue(conn, review_id: int, columns=(), statuses=(), cell_ids=()) -> list[
     conn.execute("DELETE FROM citations WHERE cell_id = ANY(%s)", (ids,))
     conn.execute(RESET, (ids,))
     return ids
+
+
+def edit_column(conn, review_id: int, column_id: int, question: str, answer_type: AnswerType,
+                instructions: str | None, model_tier: str, sample: int | None = None) -> dict:
+    """Change a column's question, instructions, answer type or tier, then answer it again:
+    every cell of the column loses its answer and citations and is queued (or, outside the
+    first `sample` documents, held). Running cells are reset too: their worker no longer holds
+    the claim, so the answer it is writing for the old question is dropped (worker.py guards
+    every write by claimed_by)."""
+    if not question.strip():
+        raise ReviewError("a column needs a question")
+    if sample is not None and sample < 1:
+        raise ReviewError("sample must be at least 1 document")
+    updated = conn.execute(
+        "UPDATE columns SET question = %s, answer_type = %s, instructions = %s, model_tier = %s"
+        " WHERE id = %s AND review_id = %s",
+        (question.strip(), answer_type, (instructions or "").strip() or None, model_tier,
+         column_id, review_id)).rowcount
+    if not updated:
+        raise ReviewError(f"review {review_id} has no column {column_id}", 404)
+    ids = [r[0] for r in _tuples(conn, "SELECT id FROM cells WHERE column_id = %s", (column_id,))]
+    conn.execute("DELETE FROM citations WHERE cell_id = ANY(%s)", (ids,))
+    conn.execute(RESET, (ids,))
+    held = hold_beyond_sample(conn, column_id, sample) if sample else 0
+    return {"column_id": column_id, "queued": len(ids) - held, "held": held}
+
+
+def run_held(conn, review_id: int, column_id: int | None = None) -> int:
+    """Queue a review's held cells (one column's with `column_id`). Returns how many."""
+    return conn.execute(
+        "UPDATE cells SET status = 'pending', updated_at = now()"
+        " WHERE review_id = %s AND status = 'held' AND (%s::int IS NULL OR column_id = %s)",
+        (review_id, column_id, column_id)).rowcount
 
 
 def delete_review(conn, review_id: int) -> None:
@@ -246,10 +311,13 @@ GROUP BY c.id ORDER BY c.id
 
 
 def cell_summary(row: dict) -> dict:
-    """A GRID_CELLS row as the grid shows it."""
+    """A GRID_CELLS row as the grid shows it. `items` repeats a list answer's items, since an
+    item can itself contain the "; " that joins them in `short`."""
+    answer = row["answer"]
     return {"id": row["id"], "doc_id": row["doc_id"], "version": row["version"],
             "column_id": row["column_id"], "status": row["status"],
-            "short": short_answer(row["answer"]), "page": row["page"], "pages": row["pages"]}
+            "short": short_answer(answer), "items": answer if isinstance(answer, list) else None,
+            "page": row["page"], "pages": row["pages"]}
 
 
 TOTALS = """
@@ -334,3 +402,71 @@ def document(conn, doc_id: str, version: str) -> dict:
                                      WHERE doc_id = %s AND version = %s ORDER BY page_no""",
                             (doc_id, version))
     return doc[0]
+
+
+def list_documents(conn) -> list[dict]:
+    """Every document version's metadata (no text), for choosing what a review covers."""
+    return _rows(conn, """SELECT id, version, title, product, doc_type, effective_date, is_current
+                          FROM documents ORDER BY id, version""")
+
+
+# --- estimating a review before it runs --------------------------------------------------
+
+# Per-model averages over the cells answered so far: prompt tokens per character of document
+# text, the uncached question part, output tokens and latency.
+CALIBRATION = """
+SELECT c.model,
+       sum(c.input_tokens + coalesce(c.cache_read_tokens, 0) + coalesce(c.cache_write_tokens, 0))
+         ::float / nullif(sum(length(d.text)), 0) AS prompt_tokens_per_char,
+       avg(c.input_tokens)::float AS question_tokens,
+       avg(c.output_tokens)::float AS output_tokens,
+       avg(c.latency_ms)::float AS latency_ms
+FROM cells c JOIN documents d ON d.id = c.doc_id AND d.version = c.version
+WHERE c.model IS NOT NULL AND c.input_tokens IS NOT NULL AND c.output_tokens IS NOT NULL
+GROUP BY c.model
+"""
+# For a model with no answered cells yet: Claude Haiku 5.5 on the stability corpus.
+DEFAULT_CALIBRATION = {"prompt_tokens_per_char": 0.46, "question_tokens": 155.0,
+                       "output_tokens": 550.0, "latency_ms": 3500.0}
+
+
+def estimate(conn, template_name: str, doc_filter: dict | None = None) -> dict:
+    """What a new review would cover and roughly cost, before it is created.
+
+    `documents` lists what the filter matches without its `id` condition, each marked
+    `selected`, so a picker can show the documents left out. Cost assumes one cache write
+    per document and model, then cache reads for its other questions. Duration assumes
+    WORKER_CONCURRENCY workers and that a document's questions run one after another (the
+    worker claims only a document's first unfinished cell); it ignores API rate limits."""
+    template = load_template(template_name)
+    doc_filter = review_filter(template, doc_filter)
+    where, params = filter_sql({k: v for k, v in doc_filter.items() if k != "id"})
+    docs = _rows(conn, f"""SELECT d.id, d.version, d.title, d.product, d.doc_type, d.is_current,
+                                  length(d.text) AS chars
+                           FROM documents d WHERE {where} ORDER BY d.id, d.version""", params)
+    ids = doc_filter.get("id")
+    chosen_ids = None if ids is None else set(ids if isinstance(ids, list) else [ids])
+    for d in docs:
+        d["selected"] = chosen_ids is None or d["id"] in chosen_ids
+    chosen = [d for d in docs if d["selected"]]
+
+    calibration = {r["model"]: r for r in _rows(conn, CALIBRATION)}
+    questions = Counter(model_for(c.model_tier) for c in template.columns)
+    cost, latency_ms = 0.0, 0.0
+    for model, k in questions.items():
+        cal = calibration.get(model) or DEFAULT_CALIBRATION
+        q = cal["question_tokens"]
+        latency_ms += k * cal["latency_ms"]
+        for d in chosen:
+            prefix = max(cal["prompt_tokens_per_char"] * d["chars"] - q, 0.0)
+            c = cost_usd(model, q * k, cal["output_tokens"] * k, prefix * (k - 1), prefix)
+            cost = None if c is None or cost is None else cost + c
+
+    workers = int(os.environ.get("WORKER_CONCURRENCY", 8))
+    for d in docs:
+        del d["chars"]
+    return {"documents": docs, "doc_filter": doc_filter, "selected": len(chosen),
+            "questions": len(template.columns), "cells": len(chosen) * len(template.columns),
+            "cost_usd": None if cost is None else round(cost, 4),
+            "seconds": round(math.ceil(len(chosen) / workers) * latency_ms / 1000) if chosen else 0,
+            "workers": workers, "calibrated": all(m in calibration for m in questions)}

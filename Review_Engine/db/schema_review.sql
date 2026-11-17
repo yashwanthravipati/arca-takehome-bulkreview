@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS cells (
   doc_id             text NOT NULL,
   version            text NOT NULL,
   status             text NOT NULL DEFAULT 'pending',
-     -- pending | running | done | not_found | needs_review | failed
+     -- pending | running | done | not_found | needs_review | failed | held
+     -- (held: left out of a column's sample run; never claimed until queued)
   answer             jsonb,
   claims             jsonb,                    -- the answer's claims, in order; citations.claim_no points here
   reasoning          text,

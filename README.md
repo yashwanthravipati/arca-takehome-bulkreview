@@ -19,6 +19,27 @@ page it came from.
 6. Optional: while `make dev` is running, `make screenshots` saves screenshots to
    `web/screenshots/`.
 
+## Using the grid
+
+- **New review.** Pick a template, then choose the documents: by product, current versions
+  only, or one by one. Before anything runs, you see the number of cells, an estimated cost
+  and duration, based on the cells answered so far.
+- **Find the problems.**
+  - Click a column title to sort.
+  - Search matches document ids, titles and answers.
+  - "Filter by column…" keeps rows by answer: yes or no, a date before today (overdue
+    commitments), a list that has items, or not found.
+  - The status chips show needs review, not found, failed and not run.
+- **Check an answer.** Click a cell. The drawer lists each claim of the answer with its
+  quotes. The document opens beside it with every quote highlighted and tagged with its
+  claim's number. The URL (`#/reviews/<id>/cells/<cellId>`) links straight to that answer;
+  **Copy link** copies it.
+- **Tune a question.** **Add column** or a column's **Edit** can run on the first 3 documents
+  first. The rest wait as "not run" until you click **Run on remaining N** in the column
+  header. Editing a column clears its answers and answers it again.
+- **Export CSV** writes one row per document, with each quote prefixed by its claim.
+- **Delete** in the review list removes a review with its cells and citations.
+
 ## How live updates work
 
 The API only creates pending cells. The worker is a separate long-lived process that claims

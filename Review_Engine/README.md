@@ -56,6 +56,8 @@ How a worker processes a cell:
      claim or list item has no quote.
    - `not_found`: the model says the document doesn't contain the answer.
    - `failed`: all 3 attempts errored.
+   - `held`: not run yet. A new or edited column can be tried on its first 3 documents; the
+     other cells wait as `held` until the user runs them. Workers never claim held cells.
 5. **Write.** The result, its claims and its citations (each tagged with its claim's number)
    are written in one transaction, and only if this worker still holds the lease.
 

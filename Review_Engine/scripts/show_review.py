@@ -26,7 +26,7 @@ from app.reviews import ReviewError, cell_detail, document, grid, short_answer  
 COL_WIDTH = 30
 CONTEXT_CHARS = 100
 MARKERS = {"not_found": "NOT FOUND", "needs_review": "REVIEW", "failed": "FAILED",
-           "pending": "pending", "running": "running"}
+           "pending": "pending", "running": "running", "held": "not run"}
 
 
 def fit(s: str, width: int) -> str:

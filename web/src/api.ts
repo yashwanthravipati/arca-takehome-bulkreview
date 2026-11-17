@@ -2,7 +2,8 @@
 
 export const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8010";
 
-export type Status = "pending" | "running" | "done" | "not_found" | "needs_review" | "failed";
+// "held": left out of a column's sample run; not queued until the user runs the rest.
+export type Status = "pending" | "running" | "done" | "not_found" | "needs_review" | "failed" | "held";
 export type AnswerType = "text" | "list" | "date" | "boolean";
 export type Tier = "fast" | "strong";
 export type Answer = string | string[] | boolean | null;
@@ -18,6 +19,10 @@ export interface Question {
 }
 
 export type NewQuestion = Omit<Question, "id" | "position">;
+export type QuestionEdit = Omit<NewQuestion, "key">;
+
+/** Document conditions for a review: a list means "any of"; null drops a template default. */
+export type DocFilter = Record<string, string | string[] | boolean | null>;
 
 export interface Template {
   name: string;
@@ -53,6 +58,8 @@ export interface CellSummary {
   column_id: number;
   status: Status;
   short: string | null;
+  /** A list answer's items (an item may itself contain the "; " that joins them in `short`). */
+  items?: string[] | null;
   page: number | null;
   pages: number[];
 }
@@ -120,6 +127,36 @@ export interface Page {
   char_end: number;
 }
 
+export interface DocumentMeta {
+  id: string;
+  version: string;
+  title: string;
+  product: string;
+  doc_type: string;
+  effective_date: string | null;
+  is_current: boolean;
+}
+
+export interface Estimate {
+  /** What the filter matches without its id condition; `selected` marks the ones included. */
+  documents: (Omit<DocumentMeta, "effective_date"> & { selected: boolean })[];
+  doc_filter: DocFilter;
+  selected: number;
+  questions: number;
+  cells: number;
+  cost_usd: number | null;
+  seconds: number;
+  workers: number;
+  /** false when a model has no answered cells yet, so its averages are defaults */
+  calibrated: boolean;
+}
+
+export interface ColumnRun {
+  column_id: number;
+  queued: number;
+  held: number;
+}
+
 export interface DocumentText {
   id: string;
   version: string;
@@ -158,12 +195,23 @@ const post = (body?: unknown): RequestInit => ({
 export const api = {
   templates: () => request<Template[]>("/api/templates"),
   reviews: () => request<ReviewListItem[]>("/api/reviews"),
-  createReview: (name: string, template: string) =>
-    request<{ id: number }>("/api/reviews", post({ name, template })),
+  documents: () => request<DocumentMeta[]>("/api/documents"),
+  estimate: (template: string, doc_filter: DocFilter) =>
+    request<Estimate>("/api/reviews/estimate", post({ template, doc_filter })),
+  createReview: (name: string, template: string, doc_filter?: DocFilter) =>
+    request<{ id: number }>("/api/reviews", post({ name, template, doc_filter })),
   review: (id: number) => request<ReviewGrid>(`/api/reviews/${id}`),
   deleteReview: (id: number) => request<void>(`/api/reviews/${id}`, { method: "DELETE" }),
-  addColumn: (id: number, column: NewQuestion) =>
-    request<{ column_id: number; new_cells: number }>(`/api/reviews/${id}/columns`, post(column)),
+  /** `sample`: queue only the first N documents' cells and hold the rest. */
+  addColumn: (id: number, column: NewQuestion, sample: number | null) =>
+    request<ColumnRun & { new_cells: number }>(`/api/reviews/${id}/columns`, post({ ...column, sample })),
+  editColumn: (id: number, columnId: number, column: QuestionEdit, sample: number | null) =>
+    request<ColumnRun>(`/api/reviews/${id}/columns/${columnId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ ...column, sample }),
+    }),
+  runHeld: (id: number, columnId: number) =>
+    request<{ queued: number }>(`/api/reviews/${id}/columns/${columnId}/run`, post()),
   cell: (id: number) => request<CellDetail>(`/api/cells/${id}`),
   rerun: (id: number) => request<{ id: number; status: Status }>(`/api/cells/${id}/rerun`, post()),
   document: (id: string, version: string) =>

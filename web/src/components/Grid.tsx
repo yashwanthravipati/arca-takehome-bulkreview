@@ -1,31 +1,30 @@
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
-import { useMemo } from "react";
-import type { CellSummary, Question, ReviewGrid, Row } from "../api";
+import { useEffect, useMemo } from "react";
+import type { Question, ReviewGrid } from "../api";
+import { matchesSearch, type GridRow, type Sort, type View } from "../rows";
 import { GridCell } from "./GridCell";
-import type { Filter } from "./ReviewPage";
 
-type GridRow = Row & { cells: Record<number, CellSummary> };
-
+/** One row per document, one column per question. `rows` are already filtered and sorted. */
 export function Grid(props: {
   grid: ReviewGrid;
-  filter: Filter;
+  rows: GridRow[];
+  view: View;
   activeCellId: number | null;
   onOpen: (cellId: number) => void;
+  onSort: (sort: Sort | null) => void;
+  onEdit: (column: Question) => void;
+  onRunHeld: (column: Question) => void;
 }) {
-  const { grid, filter, activeCellId, onOpen } = props;
-  const status = filter === "all" ? null : filter;
+  const { grid, rows, view, activeCellId, onOpen, onSort, onEdit, onRunHeld } = props;
+  const status = view.status === "all" ? null : view.status;
+  const query = view.search.trim().toLowerCase();
 
-  // One row per document; a filter keeps documents with at least one matching cell.
-  const data = useMemo(() => {
-    const byDoc = new Map<string, Record<number, CellSummary>>();
-    for (const c of grid.cells) {
-      const key = `${c.doc_id}@${c.version}`;
-      if (!byDoc.has(key)) byDoc.set(key, {});
-      byDoc.get(key)![c.column_id] = c;
-    }
-    const rows: GridRow[] = grid.rows.map((r) => ({ ...r, cells: byDoc.get(`${r.doc_id}@${r.version}`) ?? {} }));
-    return status ? rows.filter((r) => Object.values(r.cells).some((c) => c.status === status)) : rows;
-  }, [grid.rows, grid.cells, status]);
+  // Cells per column that were left out of a sample run.
+  const held = useMemo(() => {
+    const n = new Map<number, number>();
+    for (const c of grid.cells) if (c.status === "held") n.set(c.column_id, (n.get(c.column_id) ?? 0) + 1);
+    return n;
+  }, [grid.cells]);
 
   const columns = useMemo<ColumnDef<GridRow>[]>(
     () => [
@@ -44,15 +43,25 @@ export function Grid(props: {
       ...grid.columns.map(
         (q): ColumnDef<GridRow> => ({
           id: String(q.id),
-          header: () => <QuestionHeader q={q} />,
+          header: () => (
+            <QuestionHeader
+              q={q}
+              sort={view.sort}
+              held={held.get(q.id) ?? 0}
+              onSort={onSort}
+              onEdit={onEdit}
+              onRunHeld={onRunHeld}
+            />
+          ),
           cell: ({ row }) => {
             const cell = row.original.cells[q.id];
             return (
               <GridCell
                 cell={cell}
-                columnKey={q.key}
+                question={q}
                 active={cell !== undefined && cell.id === activeCellId}
                 dimmed={status !== null && cell?.status !== status}
+                match={matchesSearch(cell, query)}
                 onOpen={onOpen}
               />
             );
@@ -60,15 +69,21 @@ export function Grid(props: {
         }),
       ),
     ],
-    [grid.columns, activeCellId, status, onOpen],
+    [grid.columns, activeCellId, status, query, view.sort, held, onOpen, onSort, onEdit, onRunHeld],
   );
 
   const table = useReactTable({
-    data,
+    data: rows,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (r) => `${r.doc_id}@${r.version}`,
   });
+
+  // Bring the open cell into view, e.g. when the page was opened from a link to it.
+  useEffect(() => {
+    if (activeCellId === null) return;
+    document.querySelector(`[data-cell-id="${activeCellId}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeCellId]);
 
   return (
     <div className="grid-scroll">
@@ -96,19 +111,45 @@ export function Grid(props: {
           ))}
         </tbody>
       </table>
-      {data.length === 0 && <div className="empty">No documents have a cell with this status.</div>}
+      {rows.length === 0 && <div className="empty">No documents match these filters.</div>}
     </div>
   );
 }
 
-function QuestionHeader({ q }: { q: Question }) {
+function QuestionHeader(props: {
+  q: Question;
+  sort: Sort | null;
+  held: number;
+  onSort: (sort: Sort | null) => void;
+  onEdit: (column: Question) => void;
+  onRunHeld: (column: Question) => void;
+}) {
+  const { q, sort, held, onSort, onEdit, onRunHeld } = props;
+  const dir = sort?.columnId === q.id ? (sort.desc ? "desc" : "asc") : null;
+  // Click to sort ascending, again for descending, a third time to stop sorting.
+  const next = () => onSort(dir === null ? { columnId: q.id, desc: false } : dir === "asc" ? { columnId: q.id, desc: true } : null);
   return (
     <div className="q-head" title={`${q.question}${q.instructions ? `\n\n${q.instructions}` : ""}`}>
-      <span className="q-key">{q.key.replace(/_/g, " ")}</span>
+      <div className="q-top">
+        <button className={`q-key sort-btn ${dir ? "sorted" : ""}`} onClick={next} aria-label={`Sort by ${q.key}`}>
+          {q.key.replace(/_/g, " ")}
+          <span className="sort-arrow" aria-hidden="true">
+            {dir === "asc" ? "▲" : dir === "desc" ? "▼" : "↕"}
+          </span>
+        </button>
+        <button className="link-btn small" onClick={() => onEdit(q)}>
+          Edit
+        </button>
+      </div>
       <span className="q-text">{q.question}</span>
       <span className="q-meta">
         {q.answer_type} · {q.model_tier}
       </span>
+      {held > 0 && (
+        <button className="btn small run-rest" onClick={() => onRunHeld(q)}>
+          Run on remaining {held}
+        </button>
+      )}
     </div>
   );
 }

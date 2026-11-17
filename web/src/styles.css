@@ -232,3 +232,58 @@ mark.cite { color: inherit; border-radius: 2px; padding: 1px 0; }
 mark.cite.verified { background: var(--highlight); }
 mark.cite.unverified { background: transparent; text-decoration: underline dashed #d08a00; text-underline-offset: 3px; }
 mark.cite.active { background: var(--highlight-active); box-shadow: 0 0 0 2px var(--highlight-active); }
+
+/* --- held cells, sorting, filtering, column editing, document picker --- */
+.modal.wide { width: min(700px, calc(100vw - 32px)); }
+.link-btn { border: 0; background: none; font: inherit; font-size: 12px; color: var(--ink); padding: 2px 4px; border-radius: 4px; cursor: pointer; }
+.link-btn:hover { background: var(--bg); text-decoration: underline; }
+.link-btn.small { font-size: 11.5px; color: var(--muted); }
+.link-btn.small:hover { color: var(--ink); }
+
+.toolbar { align-items: center; flex-wrap: wrap; }
+.toolbar-sep { width: 1px; height: 18px; background: var(--border); margin: 0 6px; }
+.toolbar-spacer { flex: 1; }
+.search { font: inherit; font-size: 12px; height: 26px; width: 230px; padding: 0 9px; border: 1px solid var(--border-strong);
+  border-radius: 13px; background: var(--surface); color: var(--text); }
+.search:focus { outline: 2px solid #c9d6e4; border-color: #8ea5bd; }
+.where { display: inline-flex; gap: 4px; }
+.mini-select { font: inherit; font-size: 12px; height: 26px; padding: 0 6px; border: 1px solid var(--border-strong);
+  border-radius: 6px; background: var(--surface); color: var(--text); max-width: 200px; }
+
+.q-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.sort-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--text); cursor: pointer; text-align: left;
+  display: inline-flex; align-items: center; gap: 5px; }
+.sort-btn:hover { color: var(--ink); text-decoration: underline; }
+.sort-arrow { font-size: 10px; color: var(--faint); }
+.sort-btn:not(.sorted) .sort-arrow { opacity: 0; }
+.sort-btn:hover .sort-arrow { opacity: 1; }
+.sort-btn.sorted .sort-arrow { color: var(--ink); }
+.run-rest { margin-top: 6px; align-self: flex-start; }
+
+.cell-held { border: 1px dashed var(--border-strong); }
+.not-run { color: var(--faint); font-style: italic; }
+.cell.match { background: #fffbe0; border-color: #ecd77a; }
+.pill { display: inline-block; font-weight: 600; font-size: 11.5px; padding: 0 8px; line-height: 18px; border-radius: 9px;
+  background: #eef0f3; color: var(--text); }
+.bullet { color: var(--faint); margin-right: 5px; }
+.rel { color: var(--faint); font-size: 11px; white-space: nowrap; }
+.rel.past { color: var(--muted); }
+.badge-held { color: var(--muted); background: transparent; border: 1px dashed var(--border-strong); }
+.dot-held { background: transparent; border: 1px dashed var(--muted); }
+
+.form fieldset { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px 10px; margin: 0; min-width: 0; }
+.form legend { font-weight: 500; padding: 0 4px; }
+.form label.radio, .form label.check { flex-direction: row; align-items: flex-start; gap: 8px; font-weight: 400; }
+.form label.radio + label.radio { margin-top: 6px; }
+.form label.radio input, .form label.check input { margin: 2px 0 0; padding: 0; }
+.picker-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.picker-filters .check { margin-left: auto; align-items: center; }
+.doc-list { list-style: none; margin: 0; padding: 0; max-height: 210px; overflow: auto; border-top: 1px solid var(--border); }
+.doc-list li { padding: 5px 2px; border-bottom: 1px solid var(--border); }
+.doc-list li:last-child { border-bottom: 0; }
+.doc-list .check { align-items: center; }
+.doc-list .doc-id { flex: none; width: 118px; }
+.doc-list-title { color: var(--muted); font-size: 12px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tag { flex: none; font-size: 11px; color: var(--muted); border: 1px solid var(--border-strong); border-radius: 4px; padding: 0 5px; }
+.estimate strong { font-weight: 600; color: var(--text); }
+.estimate .small { margin-top: 3px; }

@@ -1,7 +1,7 @@
 import { api, type ReviewGrid, type Status } from "../api";
 import { Progress, STATUS_LABEL, fmtCount } from "./ui";
 
-const COUNTED: Status[] = ["done", "not_found", "needs_review", "failed", "running", "pending"];
+const COUNTED: Status[] = ["done", "not_found", "needs_review", "failed", "running", "pending", "held"];
 
 export function ReviewHeader(props: { grid: ReviewGrid; live: boolean; onAddColumn: () => void }) {
   const { grid, live, onAddColumn } = props;
@@ -39,10 +39,10 @@ export function ReviewHeader(props: { grid: ReviewGrid; live: boolean; onAddColu
           </span>
         </div>
         <div className="stat status-counts">
-          {COUNTED.map((s) => (
+          {COUNTED.filter((s) => s !== "held" || t.counts.held > 0).map((s) => (
             <span key={s} className={`count count-${s}`}>
               <i className={`dot dot-${s}`} />
-              {STATUS_LABEL[s]} <b className="tabular">{t.counts[s]}</b>
+              {STATUS_LABEL[s]} <b className="tabular">{t.counts[s] ?? 0}</b>
             </span>
           ))}
         </div>

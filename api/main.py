@@ -16,6 +16,7 @@ import sys
 from contextlib import asynccontextmanager, contextmanager
 from datetime import timedelta
 from pathlib import Path
+from typing import Literal
 
 import psycopg
 from fastapi import FastAPI, Request
@@ -27,7 +28,7 @@ from pydantic import BaseModel
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Review_Engine"))
 from app import reviews  # noqa: E402
 from app.db import database_url  # noqa: E402
-from app.models import Column  # noqa: E402
+from app.models import AnswerType, Column  # noqa: E402
 
 URL = database_url()
 SSE_POLL_S = 0.5
@@ -52,8 +53,8 @@ async def lifespan(_: FastAPI):
 
 
 api = FastAPI(title="Bulk review API", lifespan=lifespan)
-api.add_middleware(CORSMiddleware,
-                   allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
+api.add_middleware(CORSMiddleware,  # the web app on any local port (a second dev copy, say)
+                   allow_origin_regex=r"http://(127\.0\.0\.1|localhost):\d+",
                    allow_methods=["*"], allow_headers=["*"])
 
 
@@ -69,9 +70,39 @@ class NewReview(BaseModel):
     doc_filter: dict | None = None
 
 
+class ReviewEstimate(BaseModel):
+    template: str
+    doc_filter: dict | None = None
+
+
+class NewColumn(Column):
+    sample: int | None = None  # queue only the first N documents' cells; hold the rest
+
+
+class ColumnEdit(BaseModel):
+    question: str
+    answer_type: AnswerType
+    instructions: str | None = None
+    model_tier: Literal["fast", "strong"] = "fast"
+    sample: int | None = None
+
+
 @api.get("/api/templates")
 def list_templates():
     return [t.model_dump() for t in reviews.list_templates()]
+
+
+@api.get("/api/documents")
+def list_documents():
+    with db() as conn:
+        return reviews.list_documents(conn)
+
+
+@api.post("/api/reviews/estimate")
+def estimate_review(body: ReviewEstimate):
+    """The documents a new review would cover, its cell count, and a rough cost and duration."""
+    with db() as conn:
+        return reviews.estimate(conn, body.template, body.doc_filter)
 
 
 @api.get("/api/reviews")
@@ -99,9 +130,25 @@ def delete_review(review_id: int):
 
 
 @api.post("/api/reviews/{review_id}/columns", status_code=201)
-def add_column(review_id: int, column: Column):
+def add_column(review_id: int, column: NewColumn):
     with db() as conn:
-        return reviews.add_column(conn, review_id, column)
+        return reviews.add_column(conn, review_id, Column(**column.model_dump(exclude={"sample"})),
+                                  column.sample)
+
+
+@api.patch("/api/reviews/{review_id}/columns/{column_id}")
+def edit_column(review_id: int, column_id: int, body: ColumnEdit):
+    """Change a column's definition and answer it again (on a sample first, if given)."""
+    with db() as conn:
+        return reviews.edit_column(conn, review_id, column_id, body.question, body.answer_type,
+                                   body.instructions, body.model_tier, body.sample)
+
+
+@api.post("/api/reviews/{review_id}/columns/{column_id}/run")
+def run_held_cells(review_id: int, column_id: int):
+    """Queue a column's held cells: the documents left out of its sample run."""
+    with db() as conn:
+        return {"queued": reviews.run_held(conn, review_id, column_id)}
 
 
 @api.get("/api/reviews/{review_id}/events")
@@ -157,7 +204,8 @@ def get_document(doc_id: str, version: str):
         return reviews.document(conn, doc_id, version)
 
 
-EXPORT_STATUS = {"not_found": "Not found", "failed": "Failed", "pending": "", "running": ""}
+EXPORT_STATUS = {"not_found": "Not found", "failed": "Failed", "pending": "", "running": "",
+                 "held": "Not run"}
 
 
 @api.get("/api/reviews/{review_id}/export.csv")
