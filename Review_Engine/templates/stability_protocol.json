@@ -1,0 +1,48 @@
+{
+  "name": "stability_protocol",
+  "doc_type": "stability_protocol",
+  "columns": [
+    {
+      "key": "storage_condition",
+      "question": "Under which storage conditions are the stability samples stored?",
+      "answer_type": "text",
+      "instructions": "Give every condition this study uses (long-term, intermediate, accelerated, in-use), with temperature and humidity tolerances and any orientation or container note. Leave out conditions mentioned only as background.",
+      "model_tier": "fast"
+    },
+    {
+      "key": "timepoints",
+      "question": "At which timepoints are samples pulled and tested?",
+      "answer_type": "list",
+      "instructions": "One item per storage condition, e.g. \"Long-term: 0, 3, 6, 9, 12 months\". Use the schedule in this version of the protocol, including every timepoint.",
+      "model_tier": "fast"
+    },
+    {
+      "key": "acceptance_criteria",
+      "question": "What are the shelf-life acceptance criteria for the stability tests?",
+      "answer_type": "text",
+      "instructions": "List each test with its limit, e.g. \"Assay: 95.0-105.0% of label claim\". Use the limits this protocol states for its own stability testing, not limits it quotes from other documents.",
+      "model_tier": "fast"
+    },
+    {
+      "key": "deviations",
+      "question": "Which deviations from the protocol have been recorded?",
+      "answer_type": "list",
+      "instructions": "Include deviations mentioned anywhere, including appendices. One item per deviation: its ID and a short description. Return an empty list only if the document states there were none.",
+      "model_tier": "fast"
+    },
+    {
+      "key": "bracketing_justification",
+      "question": "How does the protocol justify its bracketing or matrixing design, or its decision not to use one?",
+      "answer_type": "text",
+      "instructions": "Summarize the stated rationale: which strengths, fills or packs are tested and why they represent the others, or why a reduced design is not used. Count only what the document explicitly says about bracketing, matrixing or a reduced design; do not infer a rationale from the scope or from which batches or packs happen to be tested. If the document never addresses bracketing or matrixing, set found to false.",
+      "model_tier": "fast"
+    },
+    {
+      "key": "post_approval_commitment",
+      "question": "What post-approval stability commitment does the protocol make?",
+      "answer_type": "text",
+      "instructions": "State which batches are committed, at which condition, for how long, and how results are reported. Count only a commitment the document explicitly makes to a health authority or in the registration (e.g. \"the applicant commits to...\"). An ongoing or annual stability programme that the protocol simply runs is not a commitment unless the document calls it one. If the protocol makes no post-approval commitment, set found to false.",
+      "model_tier": "fast"
+    }
+  ]
+}
