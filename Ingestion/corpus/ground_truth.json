@@ -1,0 +1,549 @@
+{
+  "company": "Aldencourt Pharmaceuticals",
+  "products": {
+    "Product A": {"drug": "Velorastat", "dosage_form": "film-coated tablets, 25 mg, 50 mg and 100 mg, in HDPE bottles with desiccant"},
+    "Product B": {"drug": "Tirexafen", "dosage_form": "oral suspension 40 mg/mL in 150 mL amber glass bottles"},
+    "Product C": {"drug": "Calvidronate", "dosage_form": "concentrate for solution for infusion 5 mg/mL in 4 mL, 10 mL and 20 mL Type I glass vials, stored refrigerated"},
+    "Product D": {"drug": "Moxilurine", "dosage_form": "150 mg hard capsules (HPMC shells) in PVC/PVDC blisters and 30-, 60- and 90-count HDPE bottles"},
+    "Product E": {"drug": "Zentoprazine", "dosage_form": "extended-release tablets, 50 mg, 100 mg and 200 mg, in HDPE bottles"}
+  },
+  "planted_cases": {
+    "contradicts_spec": "Protocol acceptance criteria contradict the product's current specification.",
+    "missing_bracketing": "Protocol has no bracketing justification at all (value null, no evidence).",
+    "deviation_in_appendix": "The protocol's only deviation is mentioned solely in an appendix on the last page.",
+    "superseded_version": "An older, superseded version exists alongside the current one; a timepoint differs between them."
+  },
+  "documents": [
+    {
+      "id": "SPEC-A", "version": "4.0", "product": "Product A", "doc_type": "specification",
+      "title": "Drug Product Specification: Velorastat Film-Coated Tablets 25 mg, 50 mg and 100 mg",
+      "effective_date": "2025-02-03", "is_current": true, "planted": null,
+      "fields": {
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "VLR-ketone": "NMT 0.3%", "any unspecified impurity": "NMT 0.10%", "total impurities": "NMT 1.0%", "dissolution": "NLT 80% (Q) in 30 minutes"},
+          "evidence": "Velorastat film-coated tablets shall meet the following shelf-life acceptance criteria: assay 95.0–105.0% of label claim, VLR-ketone not more than 0.3%, any unspecified impurity not more than 0.10%, total impurities not more than 1.0%, and dissolution not less than 80% (Q) in 30 minutes."
+        }
+      }
+    },
+    {
+      "id": "SPEC-B", "version": "3.1", "product": "Product B", "doc_type": "specification",
+      "title": "Drug Product Specification: Tirexafen Oral Suspension 40 mg/mL",
+      "effective_date": "2024-11-18", "is_current": true, "planted": null,
+      "fields": {
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "TXF-acid": "NMT 0.5%", "total impurities": "NMT 1.5%", "pH": "4.5–5.5", "sodium benzoate": "80.0–110.0% of labelled amount"},
+          "evidence": "The shelf-life acceptance criteria for Tirexafen oral suspension 40 mg/mL are assay 95.0–105.0% of label claim, TXF-acid not more than 0.5%, total impurities not more than 1.5%, pH 4.5 to 5.5, and sodium benzoate content 80.0–110.0% of the labelled amount."
+        }
+      }
+    },
+    {
+      "id": "SPEC-C", "version": "2.0", "product": "Product C", "doc_type": "specification",
+      "title": "Drug Product Specification: Calvidronate Concentrate for Solution for Infusion 5 mg/mL",
+      "effective_date": "2025-04-22", "is_current": true, "planted": null,
+      "fields": {
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "CVD-oxide": "NMT 0.5%", "total impurities": "NMT 2.0%", "pH": "6.8–7.6", "sub-visible particles": "NMT 6000/container ≥10 µm; NMT 600/container ≥25 µm"},
+          "evidence": "Calvidronate concentrate for solution for infusion 5 mg/mL must comply throughout its shelf life with assay 95.0–105.0% of label claim, CVD-oxide not more than 0.5%, total impurities not more than 2.0%, pH 6.8 to 7.6, and sub-visible particles not more than 6000 per container at 10 µm or greater and not more than 600 per container at 25 µm or greater."
+        }
+      }
+    },
+    {
+      "id": "SPEC-D", "version": "5.0", "product": "Product D", "doc_type": "specification",
+      "title": "Drug Product Specification: Moxilurine 150 mg Hard Capsules",
+      "effective_date": "2025-06-09", "is_current": true, "planted": null,
+      "fields": {
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "MXL-dimer": "NMT 0.2%", "total impurities": "NMT 1.0%", "dissolution": "NLT 75% (Q) in 45 minutes"},
+          "evidence": "The current acceptance criteria for Moxilurine 150 mg hard capsules are assay 95.0–105.0% of label claim, MXL-dimer not more than 0.2%, total impurities not more than 1.0%, and dissolution not less than 75% (Q) in 45 minutes."
+        }
+      }
+    },
+    {
+      "id": "SPEC-E", "version": "3.0", "product": "Product E", "doc_type": "specification",
+      "title": "Drug Product Specification: Zentoprazine Extended-Release Tablets 50 mg, 100 mg and 200 mg",
+      "effective_date": "2025-03-27", "is_current": true, "planted": null,
+      "fields": {
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "ZTP N-oxide": "NMT 0.3%", "total impurities": "NMT 1.2%", "drug release": "2 h: 15–35%; 8 h: 50–75%; 16 h: NLT 85%"},
+          "evidence": "Zentoprazine extended-release tablets shall comply with assay 95.0–105.0% of label claim, ZTP N-oxide not more than 0.3%, total impurities not more than 1.2%, and drug release of 15–35% at 2 hours, 50–75% at 8 hours and not less than 85% at 16 hours."
+        }
+      }
+    },
+
+    {
+      "id": "STAB-001", "version": "2.0", "product": "Product A", "doc_type": "stability_protocol",
+      "title": "Registration Stability Protocol for Velorastat Film-Coated Tablets 25 mg, 50 mg and 100 mg",
+      "effective_date": "2023-05-10", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 25°C ± 2°C / 60% RH ± 5% RH; accelerated 40°C ± 2°C / 75% RH ± 5% RH",
+          "evidence": "Registration batches will be stored at the long-term condition of 25°C ± 2°C / 60% RH ± 5% RH and at the accelerated condition of 40°C ± 2°C / 75% RH ± 5% RH."
+        },
+        "timepoints": {
+          "value": "Long-term: 0, 3, 6, 9, 12, 18, 24, 36 months; accelerated: 0, 3, 6 months",
+          "evidence": "Long-term samples will be tested at 0, 3, 6, 9, 12, 18, 24 and 36 months, and accelerated samples at 0, 3 and 6 months."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "VLR-ketone": "NMT 0.3%", "total impurities": "NMT 1.0%", "dissolution": "NLT 80% (Q) in 30 minutes"},
+          "evidence": "At every stability timepoint the tablets must meet assay 95.0–105.0% of label claim, VLR-ketone not more than 0.3%, total impurities not more than 1.0%, and dissolution not less than 80% (Q) in 30 minutes."
+        },
+        "deviations": [],
+        "bracketing_justification": {
+          "value": "Only the 25 mg and 100 mg strengths are tested; the three strengths are compressed from a common blend at proportional tablet weights in the same HDPE bottle.",
+          "evidence": "Bracketing is applied so that only the 25 mg and 100 mg strengths are placed on study, because all three strengths are compressed from a common blend at proportional tablet weights and are packaged in the same HDPE bottle presentation."
+        },
+        "post_approval_commitment": {
+          "value": "First three production-scale batches of the 25 mg and 100 mg strengths on long-term stability through 36 months, results in the annual report.",
+          "evidence": "The applicant commits to placing the first three production-scale batches of the 25 mg and 100 mg strengths on long-term stability through 36 months and reporting the results in the annual report."
+        }
+      }
+    },
+    {
+      "id": "STAB-002", "version": "1.2", "product": "Product A", "doc_type": "stability_protocol",
+      "title": "Ongoing Stability Program for Commercial Batches of Velorastat Film-Coated Tablets",
+      "effective_date": "2024-02-19", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "25°C ± 2°C / 60% RH ± 5% RH (long-term only)",
+          "evidence": "Annual commercial batches are stored only at 25°C ± 2°C / 60% RH ± 5% RH, as no accelerated testing is required for the ongoing program."
+        },
+        "timepoints": {
+          "value": "0, 12, 24, 36 months",
+          "evidence": "Each annual batch is tested at 0, 12, 24 and 36 months of storage."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "VLR-ketone": "NMT 0.3%", "total impurities": "NMT 1.0%", "dissolution": "NLT 80% (Q) in 30 minutes"},
+          "evidence": "Results are evaluated against the registered shelf-life specification of assay 95.0–105.0% of label claim, VLR-ketone not more than 0.3%, total impurities not more than 1.0%, and dissolution not less than 80% (Q) in 30 minutes."
+        },
+        "deviations": [
+          {
+            "value": "DEV-2024-0087: 12-month samples of batch VL24A013 tested 11 days after the end of the pull window; data judged valid.",
+            "evidence": "Deviation DEV-2024-0087 recorded that the 12-month samples of batch VL24A013 were tested 11 days after the end of the permitted pull window; the impact assessment concluded that the data remain valid."
+          }
+        ],
+        "bracketing_justification": {
+          "value": "Follows the STAB-001 bracketing design: one batch each of 25 mg and 100 mg per year; 50 mg represented by the brackets.",
+          "evidence": "Consistent with the bracketing design in STAB-001, one batch each of the 25 mg and 100 mg strengths is enrolled per year and the 50 mg strength is represented by the brackets."
+        },
+        "post_approval_commitment": {
+          "value": "At least one commercial batch of each bracketing strength added to the ongoing program every year of manufacture.",
+          "evidence": "As a post-approval commitment, at least one commercial batch of each bracketing strength will be added to the ongoing stability program in every year in which the product is manufactured."
+        }
+      }
+    },
+    {
+      "id": "STAB-003", "version": "1.0", "product": "Product A", "doc_type": "stability_protocol",
+      "title": "Stability Protocol Supporting Introduction of Alu/Alu Blister Packaging for Velorastat Film-Coated Tablets",
+      "effective_date": "2025-06-02", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 30°C ± 2°C / 65% RH ± 5% RH; accelerated 40°C ± 2°C / 75% RH ± 5% RH",
+          "evidence": "Blister samples will be stored at 30°C ± 2°C / 65% RH ± 5% RH for long-term testing and at 40°C ± 2°C / 75% RH ± 5% RH for accelerated testing."
+        },
+        "timepoints": {
+          "value": "Long-term: 0, 3, 6, 9, 12 months; accelerated: 0, 1, 3, 6 months",
+          "evidence": "Blister samples will be pulled at 0, 3, 6, 9 and 12 months at the long-term condition and at 0, 1, 3 and 6 months at the accelerated condition."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "VLR-ketone": "NMT 0.3%", "total impurities": "NMT 1.0%", "dissolution": "NLT 80% (Q) in 30 minutes"},
+          "evidence": "The blister-packaged tablets must remain within assay 95.0–105.0% of label claim, VLR-ketone not more than 0.3%, total impurities not more than 1.0%, and dissolution not less than 80% (Q) in 30 minutes for the duration of the study."
+        },
+        "deviations": [],
+        "bracketing_justification": {
+          "value": "Only 25 mg and 100 mg are packaged in blisters; they are the smallest and largest cavities and bracket the 50 mg presentation.",
+          "evidence": "Only the 25 mg and 100 mg strengths are packaged in blisters for this study because they represent the smallest and largest blister cavities, which bracket the 50 mg presentation."
+        },
+        "post_approval_commitment": {
+          "value": "First three commercial blister batches continued at long-term through 36 months; data submitted in a post-approval variation.",
+          "evidence": "Following approval of the blister presentation, the first three commercial blister batches will be continued at the long-term condition through 36 months and the data will be submitted in a post-approval variation."
+        }
+      }
+    },
+    {
+      "id": "STAB-004", "version": "2.1", "product": "Product B", "doc_type": "stability_protocol",
+      "title": "Registration Stability Protocol for Tirexafen Oral Suspension 40 mg/mL",
+      "effective_date": "2023-09-14", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 25°C ± 2°C / 60% RH ± 5% RH; accelerated 40°C ± 2°C / 75% RH ± 5% RH; bottles upright",
+          "evidence": "Tirexafen oral suspension in 150 mL amber glass bottles will be stored upright at 25°C ± 2°C / 60% RH ± 5% RH (long-term) and at 40°C ± 2°C / 75% RH ± 5% RH (accelerated)."
+        },
+        "timepoints": {
+          "value": "Long-term: 0, 3, 6, 9, 12, 18, 24 months; accelerated: 0, 3, 6 months",
+          "evidence": "Testing will be performed at 0, 3, 6, 9, 12, 18 and 24 months under long-term storage and at 0, 3 and 6 months under accelerated storage."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "TXF-acid": "NMT 0.5%", "total impurities": "NMT 1.5%", "pH": "4.5–5.5", "sodium benzoate": "80.0–110.0% of labelled amount"},
+          "evidence": "Each sample must comply with assay 95.0–105.0% of label claim, TXF-acid not more than 0.5%, total impurities not more than 1.5%, pH between 4.5 and 5.5, and sodium benzoate 80.0–110.0% of the labelled amount."
+        },
+        "deviations": [
+          {
+            "value": "DEV-2023-0311: humidity excursion to 81% RH for 14 hours in accelerated chamber CH-07; 3-month samples judged unaffected.",
+            "evidence": "Deviation DEV-2023-0311 documented a humidity excursion to 81% RH lasting 14 hours in accelerated chamber CH-07, and the affected 3-month samples were judged unaffected based on the container closure system."
+          }
+        ],
+        "bracketing_justification": {
+          "value": "Not applied: single strength and single 150 mL container size.",
+          "evidence": "Bracketing is not applied to this study because Tirexafen oral suspension is registered in a single strength and a single 150 mL container size."
+        },
+        "post_approval_commitment": {
+          "value": "Continue the three registration batches through 24 months and place the first three commercial batches on long-term stability through the 24-month shelf life.",
+          "evidence": "The applicant commits to continuing the three registration batches through 24 months and to placing the first three commercial batches on long-term stability through the proposed 24-month shelf life."
+        }
+      }
+    },
+    {
+      "id": "STAB-005", "version": "1.0", "product": "Product B", "doc_type": "stability_protocol",
+      "title": "Stability Protocol for Tirexafen Oral Suspension Manufactured at the Riverton Site",
+      "effective_date": "2025-01-27", "is_current": true, "planted": "contradicts_spec",
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 25°C ± 2°C / 60% RH ± 5% RH; accelerated 40°C ± 2°C / 75% RH ± 5% RH",
+          "evidence": "Batches manufactured at the Riverton site will be stored at 25°C ± 2°C / 60% RH ± 5% RH and at 40°C ± 2°C / 75% RH ± 5% RH."
+        },
+        "timepoints": {
+          "value": "Long-term: 0, 3, 6, 9, 12 months; accelerated: 0, 3, 6 months",
+          "evidence": "Samples will be withdrawn at 0, 3, 6, 9 and 12 months from long-term storage and at 0, 3 and 6 months from accelerated storage."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "90.0–110.0% of label claim", "TXF-acid": "NMT 0.5%", "total impurities": "NMT 1.5%", "pH": "4.5–5.5"},
+          "evidence": "For this site-transfer study, samples must comply with assay 90.0–110.0% of label claim, TXF-acid not more than 0.5%, total impurities not more than 1.5%, and pH between 4.5 and 5.5."
+        },
+        "deviations": [],
+        "bracketing_justification": {
+          "value": "Not used: only one strength and one container size are made at Riverton.",
+          "evidence": "Bracketing is not used because only one strength and one container size are manufactured at the Riverton site."
+        },
+        "post_approval_commitment": {
+          "value": "First three commercial Riverton batches on long-term stability through 24 months, results in the annual report.",
+          "evidence": "The first three commercial batches produced at the Riverton site will be placed on long-term stability through 24 months, with results provided in the annual report."
+        }
+      }
+    },
+    {
+      "id": "STAB-006", "version": "1.1", "product": "Product B", "doc_type": "stability_protocol",
+      "title": "In-Use Stability Protocol for Tirexafen Oral Suspension After First Opening",
+      "effective_date": "2024-06-03", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "Opened bottles at 25°C ± 2°C / 60% RH ± 5% RH, 5 mL withdrawn twice daily (simulated use)",
+          "evidence": "Opened bottles will be stored at 25°C ± 2°C / 60% RH ± 5% RH and a 5 mL dose will be withdrawn twice daily with the supplied oral syringe to simulate patient use."
+        },
+        "timepoints": {
+          "value": "Days 0, 7, 14, 21, 30 after first opening",
+          "evidence": "In-use samples will be tested on days 0, 7, 14, 21 and 30 after first opening of the bottle."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "TXF-acid": "NMT 0.5%", "pH": "4.5–5.5", "sodium benzoate": "80.0–110.0% of labelled amount", "TAMC": "NMT 100 CFU/mL"},
+          "evidence": "Throughout the in-use period the suspension must meet assay 95.0–105.0% of label claim, TXF-acid not more than 0.5%, pH between 4.5 and 5.5, sodium benzoate 80.0–110.0% of the labelled amount, and a total aerobic microbial count not more than 100 CFU/mL."
+        },
+        "deviations": [],
+        "bracketing_justification": {
+          "value": "Not applicable to in-use testing; one batch near end of shelf life tested as worst case for preservative efficacy.",
+          "evidence": "Bracketing is not applicable to the in-use study; instead, one batch near the end of its shelf life is tested as the worst case for preservative efficacy."
+        },
+        "post_approval_commitment": {"value": null, "evidence": null}
+      }
+    },
+    {
+      "id": "STAB-007", "version": "1.0", "product": "Product C", "doc_type": "stability_protocol",
+      "title": "Long-Term Stability Protocol for Calvidronate Concentrate for Solution for Infusion 5 mg/mL",
+      "effective_date": "2022-08-30", "is_current": false, "planted": "superseded_version",
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 5°C ± 3°C; accelerated 25°C ± 2°C / 60% RH ± 5% RH; vials upright and inverted",
+          "evidence": "Vials will be stored upright and inverted at 5°C ± 3°C for long-term testing and at 25°C ± 2°C / 60% RH ± 5% RH for accelerated testing."
+        },
+        "timepoints": {
+          "value": "Long-term: 0, 3, 6, 9, 12, 18, 24 months; accelerated: 0, 3, 6 months",
+          "evidence": "Long-term samples will be tested at 0, 3, 6, 9, 12, 18 and 24 months, and accelerated samples at 0, 3 and 6 months."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "CVD-oxide": "NMT 0.5%", "total impurities": "NMT 2.0%", "pH": "6.8–7.6", "sub-visible particles": "NMT 6000/container ≥10 µm; NMT 600/container ≥25 µm"},
+          "evidence": "Samples must comply with assay 95.0–105.0% of label claim, CVD-oxide not more than 0.5%, total impurities not more than 2.0%, pH 6.8 to 7.6, and sub-visible particle limits of not more than 6000 per container at 10 µm or greater and not more than 600 per container at 25 µm or greater."
+        },
+        "deviations": [],
+        "bracketing_justification": {
+          "value": "Fill-volume bracketing: 4 mL and 20 mL tested; 10 mL covered as all use the same glass, stopper and solution.",
+          "evidence": "Bracketing on fill volume is applied: the 4 mL and 20 mL presentations are tested, and the 10 mL presentation is covered because all three use the same Type I glass, stopper and solution."
+        },
+        "post_approval_commitment": {
+          "value": "First three commercial batches of each fill volume on long-term stability at 5°C ± 3°C through the approved shelf life.",
+          "evidence": "The applicant commits to placing the first three commercial batches of each fill volume on long-term stability at 5°C ± 3°C through the approved shelf life."
+        }
+      }
+    },
+    {
+      "id": "STAB-007", "version": "2.0", "product": "Product C", "doc_type": "stability_protocol",
+      "title": "Long-Term Stability Protocol for Calvidronate Concentrate for Solution for Infusion 5 mg/mL",
+      "effective_date": "2024-10-07", "is_current": true, "planted": "superseded_version",
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 5°C ± 3°C; accelerated 25°C ± 2°C / 60% RH ± 5% RH; vials upright and inverted",
+          "evidence": "Vials will be stored upright and inverted at 5°C ± 3°C for long-term testing and at 25°C ± 2°C / 60% RH ± 5% RH for accelerated testing."
+        },
+        "timepoints": {
+          "value": "Long-term: 0, 3, 6, 9, 12, 18, 24, 36 months; accelerated: 0, 3, 6 months",
+          "evidence": "Long-term samples will be tested at 0, 3, 6, 9, 12, 18, 24 and 36 months, and accelerated samples at 0, 3 and 6 months."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "CVD-oxide": "NMT 0.5%", "total impurities": "NMT 2.0%", "pH": "6.8–7.6", "sub-visible particles": "NMT 6000/container ≥10 µm; NMT 600/container ≥25 µm"},
+          "evidence": "Samples must comply with assay 95.0–105.0% of label claim, CVD-oxide not more than 0.5%, total impurities not more than 2.0%, pH 6.8 to 7.6, and sub-visible particle limits of not more than 6000 per container at 10 µm or greater and not more than 600 per container at 25 µm or greater."
+        },
+        "deviations": [
+          {
+            "value": "DEV-2024-0219: two inverted 9-month vials of batch CV23B004 broken in transit to QC; replaced with reserve vials from the same condition.",
+            "evidence": "Deviation DEV-2024-0219 recorded that two inverted 9-month vials of batch CV23B004 were broken in transit to the QC laboratory and were replaced with reserve vials from the same storage condition."
+          }
+        ],
+        "bracketing_justification": {
+          "value": "Fill-volume bracketing: 4 mL and 20 mL tested; 10 mL covered as all use the same glass, stopper and solution.",
+          "evidence": "Bracketing on fill volume is applied: the 4 mL and 20 mL presentations are tested, and the 10 mL presentation is covered because all three use the same Type I glass, stopper and solution."
+        },
+        "post_approval_commitment": {
+          "value": "First three commercial batches of each fill volume on long-term stability at 5°C ± 3°C through the approved shelf life.",
+          "evidence": "The applicant commits to placing the first three commercial batches of each fill volume on long-term stability at 5°C ± 3°C through the approved shelf life."
+        }
+      }
+    },
+    {
+      "id": "STAB-008", "version": "1.0", "product": "Product C", "doc_type": "stability_protocol",
+      "title": "In-Use Stability Protocol for Calvidronate After Dilution in 0.9% Sodium Chloride",
+      "effective_date": "2024-03-11", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "Diluted solution in polyolefin bags at 2°C to 8°C and at 25°C ± 2°C under room lighting",
+          "evidence": "Diluted infusion solutions will be held in polyolefin infusion bags at 2°C to 8°C and at 25°C ± 2°C under normal room lighting."
+        },
+        "timepoints": {
+          "value": "0, 6, 12, 24, 48 hours after preparation",
+          "evidence": "Diluted samples will be analysed at 0, 6, 12, 24 and 48 hours after preparation."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of initial concentration", "CVD-oxide": "NMT 0.5%", "pH": "6.8–7.6", "appearance": "no visible particulate matter"},
+          "evidence": "The diluted solution must retain assay of 95.0–105.0% of the initial concentration, CVD-oxide not more than 0.5%, and pH 6.8 to 7.6, with no visible particulate matter."
+        },
+        "deviations": [],
+        "bracketing_justification": {
+          "value": "Lowest (0.1 mg/mL) and highest (1.0 mg/mL) clinical dilutions studied, bracketing all intermediate dilutions.",
+          "evidence": "The lowest (0.1 mg/mL) and highest (1.0 mg/mL) clinical dilutions are studied so that all intermediate dilutions in the prescribing information are bracketed."
+        },
+        "post_approval_commitment": {"value": null, "evidence": null}
+      }
+    },
+    {
+      "id": "STAB-009", "version": "3.0", "product": "Product C", "doc_type": "stability_protocol",
+      "title": "Annual Ongoing Stability Protocol for Commercial Calvidronate Concentrate",
+      "effective_date": "2025-02-17", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "5°C ± 3°C, vials inverted (worst case)",
+          "evidence": "Commercial batches enrolled in the ongoing program are stored at 5°C ± 3°C in the inverted orientation, which is the worst case for stopper interaction."
+        },
+        "timepoints": {
+          "value": "0, 6, 12, 24, 36 months",
+          "evidence": "Annual batches are tested at 0, 6, 12, 24 and 36 months."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "CVD-oxide": "NMT 0.5%", "total impurities": "NMT 2.0%", "pH": "6.8–7.6"},
+          "evidence": "Results are assessed against the current specification limits of assay 95.0–105.0% of label claim, CVD-oxide not more than 0.5%, total impurities not more than 2.0%, and pH 6.8 to 7.6."
+        },
+        "deviations": [
+          {
+            "value": "DEV-2025-0034: refrigerator SC-12 reached 9.4°C for about 3 hours during a power interruption; no impact.",
+            "evidence": "Deviation DEV-2025-0034 documented that stability refrigerator SC-12 reached 9.4°C for approximately 3 hours during a site power interruption, and a temperature excursion assessment found no impact on the stored batches."
+          },
+          {
+            "value": "DEV-2025-0102: 12-month pH result for batch CV24C011 invalidated (expired calibration buffer); retested within the pull window.",
+            "evidence": "Under deviation DEV-2025-0102, the 12-month pH result for batch CV24C011 was invalidated because an expired calibration buffer was used, and the sample was retested within the pull window."
+          }
+        ],
+        "bracketing_justification": {
+          "value": "Per registration bracketing, 4 mL and 20 mL fills enrolled in alternate years; 10 mL not separately enrolled.",
+          "evidence": "In line with the registration bracketing design, the 4 mL and 20 mL fill volumes are enrolled in alternate years and the 10 mL fill is not separately enrolled."
+        },
+        "post_approval_commitment": {
+          "value": "At least one commercial batch per year enrolled for as long as the product is marketed.",
+          "evidence": "The marketing authorisation holder commits to enrolling at least one commercial batch per year into this ongoing stability program for as long as the product is marketed."
+        }
+      }
+    },
+    {
+      "id": "STAB-010", "version": "2.0", "product": "Product D", "doc_type": "stability_protocol",
+      "title": "Registration Stability Protocol for Moxilurine 150 mg Hard Capsules (Climatic Zones I to IVb)",
+      "effective_date": "2023-11-06", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 30°C ± 2°C / 75% RH ± 5% RH (Zone IVb); accelerated 40°C ± 2°C / 75% RH ± 5% RH",
+          "evidence": "To support global registration including Zone IVb markets, long-term storage will be at 30°C ± 2°C / 75% RH ± 5% RH and accelerated storage at 40°C ± 2°C / 75% RH ± 5% RH."
+        },
+        "timepoints": {
+          "value": "Long-term: 0, 3, 6, 9, 12, 18, 24, 36 months; accelerated: 0, 3, 6 months",
+          "evidence": "Long-term pulls are scheduled at 0, 3, 6, 9, 12, 18, 24 and 36 months, with accelerated pulls at 0, 3 and 6 months."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "MXL-dimer": "NMT 0.2%", "total impurities": "NMT 1.0%", "dissolution": "NLT 75% (Q) in 45 minutes"},
+          "evidence": "Capsules shall meet assay 95.0–105.0% of label claim, MXL-dimer not more than 0.2%, total impurities not more than 1.0%, and dissolution not less than 75% (Q) in 45 minutes at each pull."
+        },
+        "deviations": [],
+        "bracketing_justification": {
+          "value": "HDPE bottles bracketed by testing 30-count and 90-count, the extremes of fill and headspace for the 60-count.",
+          "evidence": "Bracketing is applied to the HDPE bottle presentations by testing the 30-count and 90-count bottles, which represent the extremes of fill and headspace for the 60-count bottle."
+        },
+        "post_approval_commitment": {
+          "value": "Complete the 36-month study on the three primary batches; notify the agency of any confirmed OOS result.",
+          "evidence": "The applicant commits to completing the 36-month long-term study on the three primary batches and to notifying the agency of any confirmed out-of-specification result."
+        }
+      }
+    },
+    {
+      "id": "STAB-011", "version": "1.0", "product": "Product D", "doc_type": "stability_protocol",
+      "title": "Stability Protocol for Moxilurine Capsules Filled into HPMC Shells from an Alternate Supplier",
+      "effective_date": "2025-04-14", "is_current": true, "planted": "missing_bracketing",
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 30°C ± 2°C / 75% RH ± 5% RH; accelerated 40°C ± 2°C / 75% RH ± 5% RH; PVC/PVDC blisters",
+          "evidence": "Capsules filled into the alternate-supplier HPMC shells will be stored at 30°C ± 2°C / 75% RH ± 5% RH and at 40°C ± 2°C / 75% RH ± 5% RH in PVC/PVDC blisters."
+        },
+        "timepoints": {
+          "value": "Accelerated: 0, 1, 3, 6 months; long-term: 0, 3, 6, 9, 12 months",
+          "evidence": "Samples will be tested at 0, 1, 3 and 6 months under accelerated storage and at 0, 3, 6, 9 and 12 months under long-term storage."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "MXL-dimer": "NMT 0.2%", "total impurities": "NMT 1.0%", "dissolution": "NLT 75% (Q) in 45 minutes", "shell integrity": "no brittleness or deformation"},
+          "evidence": "Acceptance criteria for this study are assay 95.0–105.0% of label claim, MXL-dimer not more than 0.2%, total impurities not more than 1.0%, dissolution not less than 75% (Q) in 45 minutes, and no capsule shell brittleness or deformation on visual inspection."
+        },
+        "deviations": [
+          {
+            "value": "DEV-2025-0158: dissolution apparatus DS-03 failed vessel temperature check at the 1-month accelerated timepoint; repeated on DS-02 with passing results.",
+            "evidence": "Deviation DEV-2025-0158 was raised when dissolution apparatus DS-03 failed its vessel temperature check at the 1-month accelerated timepoint, and the test was repeated on apparatus DS-02 with passing results."
+          }
+        ],
+        "bracketing_justification": {"value": null, "evidence": null},
+        "post_approval_commitment": {
+          "value": "First two commercial batches in alternate-supplier shells on long-term stability through 36 months.",
+          "evidence": "Upon approval, the first two commercial batches filled into the alternate-supplier shells will be placed on long-term stability through 36 months."
+        }
+      }
+    },
+    {
+      "id": "STAB-012", "version": "1.3", "product": "Product D", "doc_type": "stability_protocol",
+      "title": "Ongoing Stability Program for Moxilurine 150 mg Hard Capsules",
+      "effective_date": "2024-08-26", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "30°C ± 2°C / 75% RH ± 5% RH",
+          "evidence": "Ongoing stability batches are stored at 30°C ± 2°C / 75% RH ± 5% RH, matching the registered long-term condition."
+        },
+        "timepoints": {
+          "value": "0, 12, 24, 36 months",
+          "evidence": "Each enrolled batch is tested at 0, 12, 24 and 36 months."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "MXL-dimer": "NMT 0.2%", "total impurities": "NMT 1.0%", "dissolution": "NLT 75% (Q) in 45 minutes"},
+          "evidence": "Batches are evaluated against the registered limits of assay 95.0–105.0% of label claim, MXL-dimer not more than 0.2%, total impurities not more than 1.0%, and dissolution not less than 75% (Q) in 45 minutes."
+        },
+        "deviations": [],
+        "bracketing_justification": {
+          "value": "Blister and 90-count bottle enrolled in alternate years; registration bracketing showed the 90-count bottle is the least protective bottle.",
+          "evidence": "The PVC/PVDC blister and the 90-count HDPE bottle are enrolled in alternate years, since the registration bracketing study showed the 90-count bottle to be the least protective bottle presentation."
+        },
+        "post_approval_commitment": {"value": null, "evidence": null}
+      }
+    },
+    {
+      "id": "STAB-013", "version": "2.0", "product": "Product E", "doc_type": "stability_protocol",
+      "title": "Registration Stability Protocol for Zentoprazine Extended-Release Tablets 50 mg, 100 mg and 200 mg",
+      "effective_date": "2024-04-08", "is_current": true, "planted": "deviation_in_appendix",
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 25°C ± 2°C / 60% RH ± 5% RH; intermediate 30°C ± 2°C / 65% RH ± 5% RH; accelerated 40°C ± 2°C / 75% RH ± 5% RH",
+          "evidence": "Samples will be stored at 25°C ± 2°C / 60% RH ± 5% RH (long-term), 30°C ± 2°C / 65% RH ± 5% RH (intermediate) and 40°C ± 2°C / 75% RH ± 5% RH (accelerated)."
+        },
+        "timepoints": {
+          "value": "Long-term: 0, 3, 6, 9, 12, 18, 24, 36 months; intermediate: 0, 6, 9, 12 months; accelerated: 0, 3, 6 months",
+          "evidence": "Long-term testing will occur at 0, 3, 6, 9, 12, 18, 24 and 36 months, intermediate testing at 0, 6, 9 and 12 months, and accelerated testing at 0, 3 and 6 months."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "ZTP N-oxide": "NMT 0.3%", "total impurities": "NMT 1.2%", "drug release": "2 h: 15–35%; 8 h: 50–75%; 16 h: NLT 85%"},
+          "evidence": "All strengths must comply with assay 95.0–105.0% of label claim, ZTP N-oxide not more than 0.3%, total impurities not more than 1.2%, and drug release of 15–35% at 2 hours, 50–75% at 8 hours and not less than 85% at 16 hours."
+        },
+        "deviations": [
+          {
+            "value": "DEV-2024-0276: 6-month accelerated samples of 200 mg batch ZT23R003 pulled 9 days late during relocation of chamber CH-11; no impact on data validity.",
+            "evidence": "Deviation DEV-2024-0276: the 6-month accelerated samples of the 200 mg batch ZT23R003 were pulled 9 days late during the relocation of chamber CH-11, and the delay was assessed as having no impact on data validity."
+          }
+        ],
+        "bracketing_justification": {
+          "value": "Only 50 mg and 200 mg tested; the three strengths share a common matrix granulation and differ only in tablet weight and debossing.",
+          "evidence": "Bracketing is applied by testing only the 50 mg and 200 mg strengths, because the three strengths share a common matrix granulation and differ only in tablet weight and debossing."
+        },
+        "post_approval_commitment": {
+          "value": "First three production batches of 50 mg and 200 mg on long-term stability; 36-month data in the annual report.",
+          "evidence": "The applicant commits to placing the first three production batches of the 50 mg and 200 mg strengths on long-term stability and to reporting 36-month data in the annual report."
+        }
+      }
+    },
+    {
+      "id": "STAB-014", "version": "1.0", "product": "Product E", "doc_type": "stability_protocol",
+      "title": "Stability Protocol Supporting Manufacture of Zentoprazine Extended-Release Tablets at the Lindgren Site",
+      "effective_date": "2025-07-21", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "Long-term 25°C ± 2°C / 60% RH ± 5% RH; accelerated 40°C ± 2°C / 75% RH ± 5% RH",
+          "evidence": "Batches from the new manufacturing site will be stored at 25°C ± 2°C / 60% RH ± 5% RH and at 40°C ± 2°C / 75% RH ± 5% RH."
+        },
+        "timepoints": {
+          "value": "Both conditions: 0, 3, 6 months; long-term continues at 9, 12, 18, 24 months",
+          "evidence": "Testing will be conducted at 0, 3 and 6 months at both conditions, with long-term testing continuing at 9, 12, 18 and 24 months."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "ZTP N-oxide": "NMT 0.3%", "total impurities": "NMT 1.2%", "drug release": "2 h: 15–35%; 8 h: 50–75%; 16 h: NLT 85%"},
+          "evidence": "Site-transfer batches must meet assay 95.0–105.0% of label claim, ZTP N-oxide not more than 0.3%, total impurities not more than 1.2%, and drug release of 15–35% at 2 hours, 50–75% at 8 hours and not less than 85% at 16 hours."
+        },
+        "deviations": [],
+        "bracketing_justification": {
+          "value": "Only 200 mg made (highest drug load, greatest release-rate risk); the STAB-013 bracketing approach covers lower strengths.",
+          "evidence": "Only the 200 mg strength is manufactured for this study because it has the highest drug load and the greatest potential for release-rate change, and the bracketing approach approved in STAB-013 covers the lower strengths."
+        },
+        "post_approval_commitment": {
+          "value": "First three commercial batches from the new site on long-term stability through 36 months; comparison with original-site data in the next annual report.",
+          "evidence": "The first three commercial batches from the new site will be placed on long-term stability through 36 months, and a comparison with the original site data will be included in the next annual report."
+        }
+      }
+    },
+    {
+      "id": "STAB-015", "version": "1.1", "product": "Product E", "doc_type": "stability_protocol",
+      "title": "Ongoing Stability Program with Matrixing Design for Zentoprazine Extended-Release Tablets",
+      "effective_date": "2024-12-09", "is_current": true, "planted": null,
+      "fields": {
+        "storage_condition": {
+          "value": "25°C ± 2°C / 60% RH ± 5% RH",
+          "evidence": "Ongoing batches are stored at 25°C ± 2°C / 60% RH ± 5% RH."
+        },
+        "timepoints": {
+          "value": "0, 12, 24, 36 months; 6 and 18 months matrixed across alternate batches",
+          "evidence": "Each annual batch is tested at 0, 12, 24 and 36 months, with the 6-month and 18-month timepoints matrixed across alternate batches."
+        },
+        "acceptance_criteria": {
+          "value": {"assay": "95.0–105.0% of label claim", "ZTP N-oxide": "NMT 0.3%", "total impurities": "NMT 1.2%", "drug release": "2 h: 15–35%; 8 h: 50–75%; 16 h: NLT 85%"},
+          "evidence": "Results are compared with the current specification: assay 95.0–105.0% of label claim, ZTP N-oxide not more than 0.3%, total impurities not more than 1.2%, and drug release of 15–35% at 2 hours, 50–75% at 8 hours and not less than 85% at 16 hours."
+        },
+        "deviations": [
+          {
+            "value": "DEV-2025-0089: 24-month samples of 100 mg batch ZT22C017 placed in the 30°C/65% RH chamber for 6 days; batch retained with a supplementary 27-month test.",
+            "evidence": "Deviation DEV-2025-0089 recorded that 24-month samples of the 100 mg batch ZT22C017 were mistakenly placed in the 30°C ± 2°C / 65% RH ± 5% RH chamber for 6 days, and the batch was retained in the program with a supplementary 27-month test."
+          }
+        ],
+        "bracketing_justification": {
+          "value": "Matrixing (not bracketing) justified by low variability across strengths in registration data; every strength still tested at first and final timepoints.",
+          "evidence": "Matrixing is justified because registration data showed low variability across strengths, and the reduced design still tests every strength at the first and final timepoints."
+        },
+        "post_approval_commitment": {
+          "value": "One batch of each strength per year, rotating strengths under the matrixing design, for the life of the product.",
+          "evidence": "The holder commits to enrolling one batch of each strength per year, rotating strengths under the matrixing design, for the life of the product."
+        }
+      }
+    }
+  ]
+}

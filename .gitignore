@@ -1,0 +1,7 @@
+# Secrets and assignment materials (never commit)
+.env
+Prompt/
+
+# Python
+.venv/
+__pycache__/
