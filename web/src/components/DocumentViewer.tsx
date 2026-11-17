@@ -3,9 +3,15 @@ import type { Citation, DocumentText, Page } from "../api";
 
 type Located = Citation & { char_start: number; char_end: number };
 
-/** The stored document text, page by page, with every cited span highlighted. */
-export function DocumentViewer(props: { doc: DocumentText; citations: Citation[]; active: number | null }) {
-  const { doc, citations, active } = props;
+/** The stored document text, page by page, with every cited span highlighted and tagged with
+ * the number of the claim it supports. */
+export function DocumentViewer(props: {
+  doc: DocumentText;
+  citations: Citation[];
+  claims?: string[] | null;
+  active: number | null;
+}) {
+  const { doc, citations, claims = null, active } = props;
   const marks = useRef(new Map<number, HTMLElement>());
   const located = citations.filter((c): c is Located => c.char_start !== null && c.char_end !== null);
 
@@ -30,7 +36,7 @@ export function DocumentViewer(props: { doc: DocumentText; citations: Citation[]
           <div className="page-divider">
             <span>Page {page.page_no}</span>
           </div>
-          <p className="page-text">{renderPage(doc.text, page, located, active, marks.current)}</p>
+          <p className="page-text">{renderPage(doc.text, page, located, claims, active, marks.current)}</p>
         </section>
       ))}
     </div>
@@ -38,8 +44,16 @@ export function DocumentViewer(props: { doc: DocumentText; citations: Citation[]
 }
 
 // Split the page at every citation boundary; each piece is plain text or a <mark> covering
-// the citations that span it. The first piece of each citation registers it for scrolling.
-function renderPage(text: string, page: Page, citations: Located[], active: number | null, marks: Map<number, HTMLElement>) {
+// the citations that span it. The first piece of each citation registers it for scrolling and
+// carries its claim number; hovering a mark shows the claims it supports.
+function renderPage(
+  text: string,
+  page: Page,
+  citations: Located[],
+  claims: string[] | null,
+  active: number | null,
+  marks: Map<number, HTMLElement>,
+) {
   const { char_start: start, char_end: end } = page;
   const onPage = citations.filter((c) => c.char_start < end && c.char_end > start);
   const cuts = new Set([start, end]);
@@ -61,14 +75,19 @@ function renderPage(text: string, page: Page, citations: Located[], active: numb
     }
     const startingHere = covering.filter((c) => Math.max(start, c.char_start) === a);
     const kind = covering.every((c) => c.verified) ? "verified" : "unverified";
+    const claimNos = (cs: Located[]) => [...new Set(cs.map((c) => c.claim_no))].filter((n) => n !== null);
+    const tags = claimNos(startingHere);
+    const title = claims ? claimNos(covering).map((n) => `${n}. ${claims[n - 1] ?? ""}`).join("\n") : "";
     out.push(
       <mark
         key={a}
         className={`cite ${kind} ${covering.some((c) => c.id === active) ? "active" : ""}`}
+        title={title || undefined}
         ref={(el) => {
           if (el) startingHere.forEach((c) => marks.set(c.id, el));
         }}
       >
+        {tags.length > 0 && <sup className="claim-tag">{tags.join(",")}</sup>}
         {pieces}
       </mark>,
     );

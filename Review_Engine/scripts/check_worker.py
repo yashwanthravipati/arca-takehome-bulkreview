@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app import reviews, worker  # noqa: E402
 from app.db import database_url  # noqa: E402
 from app.llm import SPEND_CAP  # noqa: E402
-from app.models import CellResult  # noqa: E402
+from app.models import CellResult, Claim  # noqa: E402
 
 URL = database_url()
 DOCS = ["STAB-001", "STAB-002", "STAB-003"]  # 3 documents x 6 questions = 18 cells
@@ -43,7 +43,8 @@ def rate_limit_error(retry_after: str | None = None, error_code: str | None = No
 
 
 def fake_result(doc_text: str) -> CellResult:
-    return CellResult(found=True, answer="fake answer", citations=[doc_text[200:300]],
+    return CellResult(found=True, answer="fake answer",
+                      claims=[Claim(claim="fake claim", quotes=[doc_text[200:300]])],
                       reasoning="fake", model="fake", input_tokens=0, output_tokens=0,
                       cache_read_tokens=0, cache_write_tokens=0, latency_ms=0)
 

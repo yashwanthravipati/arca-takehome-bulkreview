@@ -43,17 +43,21 @@ How a worker processes a cell:
      the queue without using an attempt and the worker loop pauses. The monthly spend-cap
      429 can't be retried away, so it fails the cell normally.
    - The answer comes back as a forced `record_answer` tool call: `found`, `answer`,
-     `citations`, `reasoning`.
+     `claims`, `reasoning`. The claims split the answer into its facts: one per list item,
+     or one per fact of a text answer (each storage condition, say). Each claim carries its
+     own verbatim quotes, so every fact can be traced to its source.
 3. **Verify.** Each quote is located in the stored text (exact match, else fuzzy ≥ 95) and
    mapped to its page. A quote under 20 characters counts only if it occurs exactly once.
    `| pH | 4.5-5.5 |` pins one table row, but `25°C` proves nothing.
 4. **Status.**
-   - `done`: every citation is verified.
-   - `needs_review`: a citation can't be found in the document, or there are none.
+   - `done`: every claim has at least one quote, every quote is verified, and a list answer
+     has a claim for each item.
+   - `needs_review`: anything less. For example, a quote can't be found in the document, or a
+     claim or list item has no quote.
    - `not_found`: the model says the document doesn't contain the answer.
    - `failed`: all 3 attempts errored.
-5. **Write.** The result and its citations are written in one transaction, and only if this
-   worker still holds the lease.
+5. **Write.** The result, its claims and its citations (each tagged with its claim's number)
+   are written in one transaction, and only if this worker still holds the lease.
 
 **Why the strong tier doesn't force the tool call.** Claude Haiku 5.5 accepts
 `tool_choice: {"type": "tool"}`, so fast-tier calls force `record_answer`. Claude Sonnet 5.5

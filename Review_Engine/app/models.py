@@ -24,10 +24,14 @@ class Template(BaseModel):
     columns: list[Column]
 
 
-class Citation(BaseModel):
+class Claim(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    quote: str = Field(description="One sentence or table row copied verbatim from the document. "
-                                   "No ellipses, no paraphrasing, no joining of separate sentences.")
+    claim: str = Field(description="One fact the answer states, in a few words: a list item, or "
+                                   "one part of a text answer (for example one storage condition).")
+    quotes: list[str] = Field(description="Verbatim quotes supporting this claim. Each is one "
+                                          "sentence or table row copied character for character "
+                                          "from the document: no ellipses, no paraphrasing, no "
+                                          "joining of separate sentences.")
 
 
 # Input schema of the record_answer tool: the model's structured answer for one cell. One schema
@@ -39,14 +43,20 @@ class ToolAnswer(BaseModel):
     found: bool = Field(description="false if the document does not contain the answer.")
     answer: Answer = Field(description="In the answer type the question asks for; "
                                        "null when found is false.")
-    citations: list[Citation] = Field(description="Verbatim quotes supporting every claim in the "
-                                                  "answer; empty when found is false.")
-    reasoning: str = Field(description="One or two sentences on how the citations support the answer.")
+    claims: list[Claim] = Field(description="The answer split into its claims, each with its own "
+                                            "quotes: one claim per list item in the same order, "
+                                            "or one per fact of a text answer. An empty list "
+                                            "answer gets one claim saying there are none. Empty "
+                                            "when found is false.")
+    reasoning: str = Field(description="One or two sentences on how the quotes support the answer.")
 
     def check(self, answer_type: AnswerType) -> None:
-        """Raise ValueError if a found answer is not of the column's answer type."""
+        """Raise ValueError if a found answer is not of the column's answer type, or has no
+        claims (an answer with no evidence at all is malformed output; the worker retries)."""
         if not self.found:
             return
+        if not self.claims:
+            raise ValueError("found answer has no claims")
         a = self.answer
         ok = {
             "text": isinstance(a, str) and bool(a.strip()),
@@ -69,7 +79,7 @@ def _is_iso_date(s: str) -> bool:
 class CellResult(BaseModel):
     found: bool
     answer: Answer
-    citations: list[str]  # quotes as the model wrote them; the worker verifies them
+    claims: list[Claim]  # quotes as the model wrote them; the worker verifies them
     reasoning: str
     model: str
     input_tokens: int  # uncached input only

@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS cells (
   status             text NOT NULL DEFAULT 'pending',
      -- pending | running | done | not_found | needs_review | failed
   answer             jsonb,
+  claims             jsonb,                    -- the answer's claims, in order; citations.claim_no points here
   reasoning          text,
   attempts           int NOT NULL DEFAULT 0,
   claimed_by         text,
@@ -57,6 +58,7 @@ CREATE INDEX IF NOT EXISTS cells_open_doc_idx ON cells (review_id, doc_id, versi
 CREATE TABLE IF NOT EXISTS citations (
   id           bigserial PRIMARY KEY,
   cell_id      bigint REFERENCES cells(id) ON DELETE CASCADE,
+  claim_no     int,                            -- 1-based index into cells.claims
   doc_id       text NOT NULL,
   version      text NOT NULL,
   quote        text NOT NULL,                  -- as the model wrote it
@@ -67,3 +69,8 @@ CREATE TABLE IF NOT EXISTS citations (
   match_method text                            -- exact | fuzzy | none
 );
 CREATE INDEX IF NOT EXISTS citations_cell_idx ON citations (cell_id);
+
+-- Per-claim citations, for databases created before them. Cells answered earlier keep null
+-- claims and claim_no; the UI shows their citations as one flat list.
+ALTER TABLE cells ADD COLUMN IF NOT EXISTS claims jsonb;
+ALTER TABLE citations ADD COLUMN IF NOT EXISTS claim_no int;

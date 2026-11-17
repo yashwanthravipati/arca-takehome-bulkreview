@@ -162,16 +162,20 @@ EXPORT_STATUS = {"not_found": "Not found", "failed": "Failed", "pending": "", "r
 
 @api.get("/api/reviews/{review_id}/export.csv")
 def export_csv(review_id: int):
-    """One row per document, one column per question plus "<key>_citation" ("p.N: quote")."""
+    """One row per document, one column per question plus "<key>_citation", one entry per quote:
+    "[claim] p.N: quote"."""
     with db() as conn:
         g = reviews.grid(conn, review_id)
         citations = {}
         for c in conn.execute(
-                """SELECT ct.cell_id, ct.page_no, ct.quote, ct.verified FROM citations ct
-                   JOIN cells c ON c.id = ct.cell_id WHERE c.review_id = %s ORDER BY ct.id""",
+                """SELECT ct.cell_id, ct.page_no, ct.quote, ct.verified,
+                          c.claims ->> (ct.claim_no - 1) AS claim
+                   FROM citations ct JOIN cells c ON c.id = ct.cell_id
+                   WHERE c.review_id = %s ORDER BY ct.id""",
                 (review_id,)):
-            citations.setdefault(c["cell_id"], []).append(
-                f"p.{c['page_no']}: {c['quote']}" if c["verified"] else f"unverified: {c['quote']}")
+            where = f"p.{c['page_no']}" if c["verified"] else "unverified"
+            claim = f"[{c['claim']}] " if c["claim"] else ""  # null for cells answered earlier
+            citations.setdefault(c["cell_id"], []).append(f"{claim}{where}: {c['quote']}")
 
     cells = {(c["doc_id"], c["version"], c["column_id"]): c for c in g["cells"]}
     out = io.StringIO()

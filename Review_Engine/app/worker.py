@@ -53,18 +53,18 @@ RETURNING *
 # Guarded by status and claimed_by: if this worker's lease expired and another worker
 # re-claimed the cell, the stale result is dropped instead of overwriting the new attempt.
 WRITE_RESULT = """
-UPDATE cells SET status = %(status)s, answer = %(answer)s, reasoning = %(reasoning)s,
-       model = %(model)s, input_tokens = %(input_tokens)s, output_tokens = %(output_tokens)s,
+UPDATE cells SET status = %(status)s, answer = %(answer)s, claims = %(claims)s,
+       reasoning = %(reasoning)s, model = %(model)s, input_tokens = %(input_tokens)s, output_tokens = %(output_tokens)s,
        cache_read_tokens = %(cache_read_tokens)s, cache_write_tokens = %(cache_write_tokens)s,
        latency_ms = %(latency_ms)s, lease_expires_at = NULL, updated_at = now()
 WHERE id = %(id)s AND status = 'running' AND claimed_by = %(worker)s
 """
 
 INSERT_CITATION = """
-INSERT INTO citations (cell_id, doc_id, version, quote, char_start, char_end, page_no,
-                       verified, match_method)
-VALUES (%(cell_id)s, %(doc_id)s, %(version)s, %(quote)s, %(char_start)s, %(char_end)s,
-        %(page_no)s, %(verified)s, %(match_method)s)
+INSERT INTO citations (cell_id, claim_no, doc_id, version, quote, char_start, char_end,
+                       page_no, verified, match_method)
+VALUES (%(cell_id)s, %(claim_no)s, %(doc_id)s, %(version)s, %(quote)s, %(char_start)s,
+        %(char_end)s, %(page_no)s, %(verified)s, %(match_method)s)
 """
 
 RECORD_FAILURE = """
@@ -118,12 +118,16 @@ def verify(quote: str, text: str, pages: list[dict]) -> dict:
             "page_no": page_of(start, pages), "verified": True, "match_method": method}
 
 
-def decide_status(found: bool, citations: list[dict]) -> str:
+def decide_status(found: bool, answer, claims: list[dict]) -> str:
+    """`claims`: [{"claim": str, "citations": [verify() results]}]. An answer is done only when
+    every claim has quotes and every quote was found in the document, and a list answer has a
+    claim for each item. Anything else goes to a human."""
     if not found:
         return "not_found"
-    if citations and all(c["verified"] for c in citations):
-        return "done"
-    return "needs_review"  # an answer without checkable evidence goes to a human
+    supported = bool(claims) and all(
+        c["citations"] and all(q["verified"] for q in c["citations"]) for c in claims)
+    covered = not isinstance(answer, list) or len(claims) >= len(answer)
+    return "done" if supported and covered else "needs_review"
 
 
 async def fetchone(conn, sql, params):
@@ -149,13 +153,15 @@ async def process(conn, cell: dict, worker: str, sem: asyncio.Semaphore) -> str:
         async with sem:  # caps concurrent model calls across all worker loops in this process
             result = await answer_cell(text, column)
 
-        citations = [verify(q, text, pages) for q in result.citations]
-        status = decide_status(result.found, citations)
+        claims = [{"claim": c.claim, "citations": [verify(q, text, pages) for q in c.quotes]}
+                  for c in result.claims]
+        status = decide_status(result.found, result.answer, claims)
 
         async with conn.transaction():
             written = await conn.execute(WRITE_RESULT, {
-                **result.model_dump(exclude={"found", "citations"}),
+                **result.model_dump(exclude={"found", "claims"}),
                 "answer": None if result.answer is None else Jsonb(result.answer),
+                "claims": Jsonb([c["claim"] for c in claims]),
                 "status": status,
                 "id": cell["id"], "worker": worker})
             if written.rowcount == 0:
@@ -164,8 +170,9 @@ async def process(conn, cell: dict, worker: str, sem: asyncio.Semaphore) -> str:
             await conn.execute("DELETE FROM citations WHERE cell_id = %s", (cell["id"],))
             async with conn.cursor() as cur:
                 await cur.executemany(INSERT_CITATION, [
-                    {**c, "cell_id": cell["id"], "doc_id": doc["id"], "version": doc["version"]}
-                    for c in citations])
+                    {**q, "claim_no": n, "cell_id": cell["id"], "doc_id": doc["id"],
+                     "version": doc["version"]}
+                    for n, c in enumerate(claims, 1) for q in c["citations"]])
         return status
 
     except Exception as e:  # noqa: BLE001 - any failure is recorded on the cell and retried

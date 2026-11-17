@@ -7,6 +7,8 @@ Answer, per cell (scored on the answer even when the status is needs_review):
   - text columns       -> the fast model judges whether the answer states the same facts
 Citation, per cell with ground-truth evidence: some verified citation is on the page of a
 ground-truth evidence sentence.
+Claims, over answered cells: how many claims have at least one quote found in the document,
+and how many list items have a claim.
 Planted cases: whether each trap built into the corpus was handled.
 
 Usage: python scripts/eval_review.py 1
@@ -114,6 +116,23 @@ def print_accuracy(results, keys):
             print("-" * 60)
 
 
+def print_claims(cells):
+    """Per-claim evidence over answered cells; cells answered before per-claim citations
+    (claims is null) are skipped."""
+    answered = [c for c in cells if c["claims"] is not None and c["status"] in ("done", "needs_review")]
+    if not answered:
+        return
+    claims = supported = items = items_covered = 0
+    for c in answered:
+        claims += len(c["claims"])
+        supported += len({ct["claim_no"] for ct in c["citations"] if ct["verified"]})
+        if isinstance(c["answer"], list):
+            items += len(c["answer"])
+            items_covered += min(len(c["answer"]), len(c["claims"]))
+    print(f"claims: {supported}/{claims} have a quote found in the document; "
+          f"{items_covered}/{items} list items have a claim")
+
+
 def print_planted(results, gt, review_docs, last_page):
     by = {(r["doc_id"], r["version"], r["key"]): r for r in results}
 
@@ -174,7 +193,7 @@ def main():
 
     with psycopg.connect(url, row_factory=dict_row) as conn:
         cells = conn.execute(
-            """SELECT c.id, c.doc_id, c.version, c.status, c.answer,
+            """SELECT c.id, c.doc_id, c.version, c.status, c.answer, c.claims,
                       col.key, col.question, col.answer_type, col.position
                FROM cells c JOIN columns col ON col.id = c.column_id
                WHERE c.review_id = %s ORDER BY col.position, c.doc_id""",
@@ -182,7 +201,7 @@ def main():
         if not cells:
             sys.exit(f"review {args.review} has no cells")
         citations = defaultdict(list)
-        for ct in conn.execute("SELECT cell_id, page_no, verified FROM citations"
+        for ct in conn.execute("SELECT cell_id, claim_no, page_no, verified FROM citations"
                                " WHERE cell_id IN (SELECT id FROM cells WHERE review_id = %s)",
                                (args.review,)):
             citations[ct["cell_id"]].append(ct)
@@ -208,6 +227,7 @@ def main():
         counts[c["status"]] += 1
     print("\nstatus: " + ", ".join(f"{s} {counts[s]}" for s in
                                    ("done", "not_found", "needs_review", "failed", "pending", "running")))
+    print_claims(cells)
 
     print("\nplanted cases:")
     last_page = {d: p[-1]["page_no"] for d, p in pages.items()}

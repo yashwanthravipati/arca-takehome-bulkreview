@@ -27,16 +27,21 @@ your answer by calling the record_answer tool.
 
 Rules:
 - Answer only from the document. Do not use outside knowledge, and do not guess.
-- Every claim in the answer must be supported by at least one citation.
-- Each citation quote is one sentence or one table row, copied verbatim from the document, \
-character for character: no ellipses, no paraphrasing, no joining of separate sentences.
-- If the document does not contain the answer, set found to false, answer to null and \
-citations to an empty list.
-- reasoning is one or two sentences on how the citations support the answer."""
+- Split the answer into claims: one claim per list item, in the same order, or one claim per \
+fact of a text answer (for example, each storage condition). Give every claim its own quotes; \
+if one quote supports several claims, repeat it under each. A found answer always has claims.
+- Each quote is one sentence or one table row, copied verbatim from the document, character \
+for character: no ellipses, no paraphrasing, no joining of separate sentences.
+- An empty list answer (the document states there are none) gets one claim saying so, \
+quoting that statement.
+- If the document does not contain the answer, set found to false, answer to null and claims \
+to an empty list.
+- reasoning is one or two sentences on how the quotes support the answer."""
 
 ANSWER_TOOL = {
     "name": "record_answer",
-    "description": "Record the answer to the question about the document, with verbatim citations.",
+    "description": "Record the answer to the question about the document, with verbatim quotes "
+                   "for each claim.",
     "strict": True,
     "input_schema": ToolAnswer.model_json_schema(),
 }
@@ -176,7 +181,7 @@ async def answer_cell(doc_text: str, column: Column) -> CellResult:
     return CellResult(
         found=out.found,
         answer=out.answer if out.found else None,
-        citations=[c.quote for c in out.citations],
+        claims=out.claims if out.found else [],
         reasoning=out.reasoning,
         model=model,
         input_tokens=usage.input_tokens,

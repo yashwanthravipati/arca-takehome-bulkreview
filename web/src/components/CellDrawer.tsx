@@ -67,14 +67,14 @@ export function CellDrawer({ summary, onClose }: { summary: CellSummary; onClose
                 </div>
               )}
               <Metadata cell={cell} />
-              {cell.citations.length > 0 && (
-                <CitationList citations={cell.citations} active={activeCitation} onSelect={setActiveCitation} />
+              {(cell.citations.length > 0 || !!cell.claims?.length) && (
+                <Evidence cell={cell} active={activeCitation} onSelect={setActiveCitation} />
               )}
             </>
           )}
         </section>
         {doc && cell ? (
-          <DocumentViewer doc={doc} citations={cell.citations} active={activeCitation} />
+          <DocumentViewer doc={doc} citations={cell.citations} claims={cell.claims} active={activeCitation} />
         ) : (
           <div className="doc-viewer muted">Loading document…</div>
         )}
@@ -130,30 +130,58 @@ function Metadata({ cell }: { cell: CellDetail }) {
   );
 }
 
-function CitationList(props: { citations: Citation[]; active: number | null; onSelect: (id: number) => void }) {
-  const { citations, active, onSelect } = props;
+/** Each claim of the answer with the quotes that support it. Cells answered before per-claim
+ * citations have no claims; their citations show as one flat list. */
+function Evidence(props: { cell: CellDetail; active: number | null; onSelect: (id: number) => void }) {
+  const { cell, active, onSelect } = props;
+  const item = (c: Citation) => <CitationItem key={c.id} citation={c} active={active === c.id} onSelect={onSelect} />;
+  if (!cell.claims) {
+    return (
+      <div className="block">
+        <div className="label">Citations ({cell.citations.length})</div>
+        <ol className="citations">{cell.citations.map(item)}</ol>
+      </div>
+    );
+  }
   return (
     <div className="block">
-      <div className="label">Citations ({citations.length})</div>
-      <ol className="citations">
-        {citations.map((c) => {
-          const located = c.char_start !== null;
+      <div className="label">Claims ({cell.claims.length})</div>
+      <ol className="claims">
+        {cell.claims.map((claim, i) => {
+          const quotes = cell.citations.filter((c) => c.claim_no === i + 1);
           return (
-            <li
-              key={c.id}
-              className={`citation ${c.verified ? "" : "unverified"} ${active === c.id ? "active" : ""} ${located ? "clickable" : ""}`}
-              onClick={() => located && onSelect(c.id)}
-            >
-              <div className="cite-meta">
-                <span className="page-tag">{c.page_no ? `p.${c.page_no}` : "no page"}</span>
-                <span className={c.verified ? "ok" : "warn"}>{c.verified ? "Verified" : "Not found in document"}</span>
-                {c.match_method && c.match_method !== "none" && <span className="muted">{c.match_method} match</span>}
+            <li key={i} className="claim">
+              <div className="claim-text">
+                <span className="claim-no">{i + 1}</span>
+                <span>{claim}</span>
               </div>
-              <q>{c.quote}</q>
+              {quotes.length > 0 ? (
+                <ol className="citations">{quotes.map(item)}</ol>
+              ) : (
+                <p className="warn small">No supporting quote.</p>
+              )}
             </li>
           );
         })}
       </ol>
     </div>
+  );
+}
+
+function CitationItem(props: { citation: Citation; active: boolean; onSelect: (id: number) => void }) {
+  const { citation: c, active, onSelect } = props;
+  const located = c.char_start !== null;
+  return (
+    <li
+      className={`citation ${c.verified ? "" : "unverified"} ${active ? "active" : ""} ${located ? "clickable" : ""}`}
+      onClick={() => located && onSelect(c.id)}
+    >
+      <div className="cite-meta">
+        <span className="page-tag">{c.page_no ? `p.${c.page_no}` : "no page"}</span>
+        <span className={c.verified ? "ok" : "warn"}>{c.verified ? "Verified" : "Not found in document"}</span>
+        {c.match_method && c.match_method !== "none" && <span className="muted">{c.match_method} match</span>}
+      </div>
+      <q>{c.quote}</q>
+    </li>
   );
 }

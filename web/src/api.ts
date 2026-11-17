@@ -79,6 +79,8 @@ export interface ReviewGrid {
 
 export interface Citation {
   id: number;
+  /** 1-based index into CellDetail.claims; null for cells answered before per-claim citations */
+  claim_no: number | null;
   quote: string;
   char_start: number | null;
   char_end: number | null;
@@ -98,6 +100,8 @@ export interface CellDetail {
   answer_type: AnswerType;
   status: Status;
   answer: Answer;
+  /** the answer split into its facts; each citation names the claim it supports */
+  claims: string[] | null;
   reasoning: string | null;
   model: string | null;
   input_tokens: number | null;
