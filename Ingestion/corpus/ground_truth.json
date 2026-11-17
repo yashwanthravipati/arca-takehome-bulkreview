@@ -544,6 +544,236 @@
           "evidence": "The holder commits to enrolling one batch of each strength per year, rotating strengths under the matrixing design, for the life of the product."
         }
       }
+    },
+    {
+      "id": "HAL-001", "version": "1.0", "product": "Product A", "doc_type": "ha_letter",
+      "title": "FDA Letter on a Post-Approval Commitment: Velorastat Film-Coated Tablets (NDA 980142)",
+      "effective_date": "2025-10-06", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Submit 36-month long-term stability data for the first three commercial batches of Velorastat film-coated tablets.",
+          "evidence": "Aldencourt Pharmaceuticals committed to submit 36-month long-term stability data for the first three commercial batches of Velorastat film-coated tablets."
+        },
+        "due_date": {
+          "value": "2026-03-31",
+          "evidence": "The final report for this commitment is due on March 31, 2026."
+        },
+        "met": {
+          "value": false,
+          "evidence": "As of the date of this letter, this commitment remains open."
+        },
+        "owner": {
+          "value": "Dr. Helena Marsh, Director of Regulatory Affairs CMC",
+          "evidence": "Dr. Helena Marsh, Director of Regulatory Affairs CMC at Aldencourt, is the responsible contact for this commitment."
+        }
+      }
+    },
+    {
+      "id": "HAL-002", "version": "1.0", "product": "Product B", "doc_type": "ha_letter",
+      "title": "EMA Letter on a Post-Authorisation Measure: Tirexafen Oral Suspension (EMEA/H/C/009412)",
+      "effective_date": "2026-05-20", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Complete an in-use stability study of the opened 150 mL Tirexafen oral suspension bottle.",
+          "evidence": "The marketing authorisation holder committed to complete an in-use stability study of the opened 150 mL Tirexafen oral suspension bottle."
+        },
+        "due_date": {
+          "value": "2026-12-15",
+          "evidence": "The study report is due on 15 December 2026."
+        },
+        "met": {
+          "value": false,
+          "evidence": "This measure remains open and is not yet due."
+        },
+        "owner": {
+          "value": "Marcus Ellery, Head of Stability Operations",
+          "evidence": "Marcus Ellery, Head of Stability Operations at Aldencourt, is named as the owner of this measure."
+        }
+      }
+    },
+    {
+      "id": "HAL-003", "version": "1.0", "product": "Product C", "doc_type": "ha_letter",
+      "title": "FDA Acknowledgement of a Fulfilled Commitment: Calvidronate Concentrate for Infusion (NDA 980377)",
+      "effective_date": "2025-12-09", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Conduct a confirmatory photostability study of the 20 mL Calvidronate vial in its carton.",
+          "evidence": "Aldencourt Pharmaceuticals committed to conduct a confirmatory photostability study of the 20 mL Calvidronate vial in its carton."
+        },
+        "due_date": {
+          "value": "2025-11-30",
+          "evidence": "The study report was due on November 30, 2025."
+        },
+        "met": {
+          "value": true,
+          "evidence": "The Agency considers this commitment fulfilled."
+        },
+        "owner": {
+          "value": "Dr. Priya Raman, Associate Director of Regulatory Affairs",
+          "evidence": "Dr. Priya Raman, Associate Director of Regulatory Affairs, is the responsible contact for this commitment."
+        }
+      }
+    },
+    {
+      "id": "HAL-004", "version": "1.0", "product": "Product D", "doc_type": "ha_letter",
+      "title": "MHRA Letter on a Post-Authorisation Commitment: Moxilurine 150 mg Hard Capsules (PL 55821/0013)",
+      "effective_date": "2026-02-12", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Revalidate the dissolution method for Moxilurine 150 mg capsules filled into HPMC shells from the alternate supplier.",
+          "evidence": "The licence holder committed to revalidate the dissolution method for Moxilurine 150 mg capsules filled into HPMC shells from the alternate supplier."
+        },
+        "due_date": {
+          "value": "2026-06-30",
+          "evidence": "The revalidation report is due on 30 June 2026."
+        },
+        "met": {
+          "value": false,
+          "evidence": "This commitment remains open."
+        },
+        "owner": {
+          "value": "Thomas Okafor, Analytical Development Lead",
+          "evidence": "Thomas Okafor, Analytical Development Lead at Aldencourt, owns this commitment."
+        }
+      }
+    },
+    {
+      "id": "HAL-005", "version": "1.0", "product": "Product E", "doc_type": "ha_letter",
+      "title": "Health Canada Letter on a Specification Commitment: Zentoprazine Extended-Release Tablets (Submission 271944)",
+      "effective_date": "2026-07-01", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Submit a revised drug product specification for Zentoprazine extended-release tablets with a tightened limit for ZTP N-oxide.",
+          "evidence": "Aldencourt Pharmaceuticals committed to submit a revised drug product specification for Zentoprazine extended-release tablets with a tightened limit for ZTP N-oxide."
+        },
+        "due_date": {
+          "value": "2027-01-31",
+          "evidence": "The revised specification is due on 31 January 2027."
+        },
+        "met": {
+          "value": false,
+          "evidence": "This commitment is open and is not yet due."
+        },
+        "owner": {
+          "value": "Dr. Helena Marsh, Director of Regulatory Affairs CMC",
+          "evidence": "Dr. Helena Marsh, Director of Regulatory Affairs CMC, is the responsible contact for this commitment."
+        }
+      }
+    },
+    {
+      "id": "HAL-006", "version": "1.0", "product": "Product E", "doc_type": "ha_letter",
+      "title": "FDA Acknowledgement of a Fulfilled Commitment: Zentoprazine Site Transfer (NDA 980563)",
+      "effective_date": "2025-10-20", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Provide comparability stability data for Zentoprazine extended-release tablets manufactured at the Lindgren site.",
+          "evidence": "Aldencourt Pharmaceuticals committed to provide comparability stability data for Zentoprazine extended-release tablets manufactured at the Lindgren site."
+        },
+        "due_date": {
+          "value": "2025-09-30",
+          "evidence": "The comparability data were due on September 30, 2025."
+        },
+        "met": {
+          "value": true,
+          "evidence": "The Agency considers this commitment fulfilled."
+        },
+        "owner": {
+          "value": "Sofia Brandt, Site Regulatory Lead at the Lindgren site",
+          "evidence": "Sofia Brandt, Site Regulatory Lead at the Lindgren site, is the responsible contact for this commitment."
+        }
+      }
+    },
+    {
+      "id": "HAL-007", "version": "1.0", "product": "Product A", "doc_type": "ha_letter",
+      "title": "EMA Letter on a Post-Authorisation Measure: Velorastat Film-Coated Tablets (EMEA/H/C/009288)",
+      "effective_date": "2025-11-14", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Submit an elemental impurities risk assessment for Velorastat film-coated tablets in line with ICH Q3D.",
+          "evidence": "The marketing authorisation holder committed to submit an elemental impurities risk assessment for Velorastat film-coated tablets in line with ICH Q3D."
+        },
+        "due_date": {
+          "value": "2026-02-28",
+          "evidence": "The risk assessment is due on 28 February 2026."
+        },
+        "met": {
+          "value": false,
+          "evidence": "This measure remains open."
+        },
+        "owner": {
+          "value": "Dr. Priya Raman, Associate Director of Regulatory Affairs",
+          "evidence": "Dr. Priya Raman, Associate Director of Regulatory Affairs at Aldencourt, is named as the owner of this measure."
+        }
+      }
+    },
+    {
+      "id": "HAL-008", "version": "1.0", "product": "Product C", "doc_type": "ha_letter",
+      "title": "Swissmedic Letter on a Condition of Authorisation: Calvidronate Concentrate for Infusion (Authorisation 69802)",
+      "effective_date": "2026-03-03", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Submit container closure integrity test results for the 4 mL and 10 mL Calvidronate vials.",
+          "evidence": "Aldencourt Pharmaceuticals committed to submit container closure integrity test results for the 4 mL and 10 mL Calvidronate vials."
+        },
+        "due_date": {
+          "value": "2026-08-31",
+          "evidence": "The test results are due on 31 August 2026."
+        },
+        "met": {
+          "value": false,
+          "evidence": "This condition remains open."
+        },
+        "owner": {
+          "value": "Marcus Ellery, Head of Stability Operations",
+          "evidence": "Marcus Ellery, Head of Stability Operations at Aldencourt, owns this commitment."
+        }
+      }
+    },
+    {
+      "id": "HAL-009", "version": "1.0", "product": "Product D", "doc_type": "ha_letter",
+      "title": "FDA Reminder on an Overdue Commitment: Moxilurine 150 mg Hard Capsules (NDA 980619)",
+      "effective_date": "2026-06-02", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Submit 24-month stability data for Moxilurine capsules packaged in 90-count HDPE bottles.",
+          "evidence": "Aldencourt Pharmaceuticals committed to submit 24-month stability data for Moxilurine capsules packaged in 90-count HDPE bottles."
+        },
+        "due_date": {
+          "value": "2026-05-15",
+          "evidence": "The data were due on May 15, 2026."
+        },
+        "met": {
+          "value": false,
+          "evidence": "The Agency notes that this commitment is overdue and remains open."
+        },
+        "owner": {
+          "value": "Dr. Lena Vogt, Regulatory Affairs Manager",
+          "evidence": "Dr. Lena Vogt, Regulatory Affairs Manager at Aldencourt, is the responsible contact for this commitment."
+        }
+      }
+    },
+    {
+      "id": "HAL-010", "version": "1.0", "product": "Product B", "doc_type": "ha_letter",
+      "title": "EMA Letter Closing a Post-Authorisation Measure: Tirexafen Oral Suspension (EMEA/H/C/009412)",
+      "effective_date": "2026-02-27", "is_current": true, "planted": null,
+      "fields": {
+        "commitment": {
+          "value": "Submit the final report of the extractables and leachables study for the Tirexafen amber glass bottle.",
+          "evidence": "The marketing authorisation holder committed to submit the final report of the extractables and leachables study for the Tirexafen amber glass bottle."
+        },
+        "due_date": {
+          "value": "2026-01-31",
+          "evidence": "The final report was due on 31 January 2026."
+        },
+        "met": {
+          "value": true,
+          "evidence": "The Agency considers this measure fulfilled."
+        },
+        "owner": {
+          "value": "Dr. Lena Vogt, Regulatory Affairs Manager",
+          "evidence": "Dr. Lena Vogt, Regulatory Affairs Manager at Aldencourt, is named as the owner of this measure."
+        }
+      }
     }
   ]
 }

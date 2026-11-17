@@ -1,0 +1,34 @@
+{
+  "name": "ha_letter",
+  "doc_type": "ha_letter",
+  "columns": [
+    {
+      "key": "commitment",
+      "question": "What commitment did the company make?",
+      "answer_type": "text",
+      "instructions": "One sentence: what the company will submit or do, and for which product. Use the commitment this letter is about.",
+      "model_tier": "fast"
+    },
+    {
+      "key": "due_date",
+      "question": "When is the commitment due?",
+      "answer_type": "date",
+      "instructions": "The date the commitment must be completed or reported by. Not the letter's own date or any other date it mentions.",
+      "model_tier": "fast"
+    },
+    {
+      "key": "met",
+      "question": "Has the commitment been met?",
+      "answer_type": "boolean",
+      "instructions": "true only if the letter states the commitment is fulfilled or complete; false if it states the commitment is open, pending or overdue. If the letter doesn't say, the answer is not found.",
+      "model_tier": "fast"
+    },
+    {
+      "key": "owner",
+      "question": "Who owns the commitment at the company?",
+      "answer_type": "text",
+      "instructions": "The person named as responsible for the commitment, with their role.",
+      "model_tier": "fast"
+    }
+  ]
+}

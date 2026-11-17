@@ -4,6 +4,7 @@ Answer, per cell (scored on the answer even when the status is needs_review):
   - ground truth null  -> correct only if the cell is not_found
   - list columns       -> normalized sets must be equal: deviation IDs; the numbers in
                           timepoint lists ("0, 3, 6 months", "Day 7", "48 hours")
+  - date, yes/no       -> must equal the ground truth exactly
   - text columns       -> the fast model judges whether the answer states the same facts
 Citation, per cell with ground-truth evidence: some verified citation is on the page of a
 ground-truth evidence sentence.
@@ -80,6 +81,8 @@ async def score(cell, expected, judge_sem) -> tuple[bool, str]:
     if cell["answer_type"] == "list":
         want, got = as_set(cell["key"], expected), as_set(cell["key"], answer)
         return want == got, f"missing {sorted(want - got)}, extra {sorted(got - want)}"
+    if cell["answer_type"] in ("date", "boolean"):
+        return answer == expected, f"expected {expected!r}, got {answer!r}"
     async with judge_sem:
         return await judge(cell["question"], as_text(expected), as_text(answer))
 
@@ -135,8 +138,8 @@ def print_claims(cells, results):
         checked += sum(ch is not None for ch in checks)
         if any(ch is not None and not ch["ok"] for ch in checks):
             flagged.append(c)
-    print(f"claims: {supported}/{claims} have a quote found in the document; "
-          f"{items_covered}/{items} list items have a claim")
+    print(f"claims: {supported}/{claims} have a quote found in the document"
+          + (f"; {items_covered}/{items} list items have a claim" if items else ""))
     if checked:
         correct = {r["id"]: r["correct"] for r in results}
         wrong = [c for c in flagged if correct.get(c["id"]) is False]
@@ -151,12 +154,17 @@ def print_claims(cells, results):
 
 def print_planted(results, gt, review_docs, last_page):
     by = {(r["doc_id"], r["version"], r["key"]): r for r in results}
+    printed = []
 
     def line(ok, case, text):
+        printed.append(case)
         print(f"  [{ {True: 'PASS', False: 'FAIL', None: 'LATER'}[ok] }] {case:<22} {text}")
 
     for d in gt["documents"]:
         doc, ver, case = d["id"], d["version"], d["planted"]
+        current = next((x for x in gt["documents"] if x["id"] == doc and x["is_current"]), d)
+        if (current["id"], current["version"]) not in review_docs:
+            continue  # a planted case in a document this review doesn't cover
         if case == "missing_bracketing":
             r = by.get((doc, ver, "bracketing_justification"))
             line(bool(r) and r["status"] == "not_found", case,
@@ -172,7 +180,6 @@ def print_planted(results, gt, review_docs, last_page):
                  f"p.{','.join(map(str, sorted(r['cited']))) if r else '-'} "
                  f"(appendix is the last page, p.{last_page[doc, ver]})")
         elif case == "superseded_version" and not d["is_current"]:
-            current = next(x for x in gt["documents"] if x["id"] == doc and x["is_current"])
             r = by.get((doc, current["version"], "timepoints"))
             added = (as_set("timepoints", current["fields"]["timepoints"]["value"])
                      - as_set("timepoints", d["fields"]["timepoints"]["value"]))
@@ -196,6 +203,8 @@ def print_planted(results, gt, review_docs, last_page):
     if absent:
         line(all(r["status"] == "not_found" for r in absent), "absent field",
              ", ".join(f"{r['doc_id']} {r['key']} -> {r['status']}" for r in absent))
+    if not printed:
+        print("  none in the documents this review covers")
 
 
 def main():

@@ -1,7 +1,7 @@
 """Generate the synthetic regulatory corpus from corpus/ground_truth.json.
 
-For each document the model writes a realistic GMP document from the
-ground-truth facts. The script then paginates it at paragraph boundaries
+For each document the model writes a realistic GMP document (or a health-authority
+letter) from the ground-truth facts. The script then paginates it at paragraph boundaries
 (`<!-- page N -->` about every 400-500 words) and checks it:
   - every evidence sentence appears exactly once (after normalize())
   - the planted cases hold (no bracketing text in STAB-011, the STAB-013
@@ -40,6 +40,12 @@ SYSTEM = (
     "IDs, analytical method numbers, sample quantities, responsibilities and approval "
     "signatures. All people, sites and data are fictional and internally consistent."
 )
+LETTER_SYSTEM = (
+    "You write correspondence from health authorities (FDA, EMA, MHRA, Health Canada, "
+    "Swissmedic) to {company}, a mid-size pharmaceutical company, about the commitments it made "
+    "for its products: formal letters with the authority's reference numbers, dates and a "
+    "signature block. All people, numbers and data are fictional and internally consistent."
+)
 
 SECTIONS = {
     "stability_protocol": [
@@ -48,6 +54,12 @@ SECTIONS = {
         "Bracketing and matrixing", "Post-approval commitments",
         "References (ICH Q1A(R2), Q1B, Q1D, Q1E and others as relevant)", "Revision history",
         "Approvals",
+    ],
+    "ha_letter": [
+        "Letterhead: the authority, the letter's date and its reference numbers",
+        "Addressee and salutation", "Background: the application and how the commitment arose",
+        "The commitment, its due date and its status", "Next steps and contact",
+        "Closing and signature",
     ],
     "specification": [
         "Purpose", "Scope", "Product description and composition",
@@ -73,8 +85,11 @@ def build_prompt(gt, doc):
              for f, v in doc["fields"].items()}
     sections = list(SECTIONS[doc["doc_type"]])
     fields = doc["fields"]
+    if doc["doc_type"] == "ha_letter":
+        return build_letter_prompt(gt, doc, facts, sections)
     related = sorted({f"{d['id']} ({d['title']})" for d in gt["documents"]
-                      if d["product"] == doc["product"] and d["id"] != doc["id"]})
+                      if d["product"] == doc["product"] and d["id"] != doc["id"]
+                      and d["doc_type"] != "ha_letter"})
     rules = [
         "Length: 1,800 to 2,600 words.",
         "The only STAB- or SPEC- documents that exist for this product are: "
@@ -141,6 +156,45 @@ Rules:
 {rules_text}"""
 
 
+def build_letter_prompt(gt, doc, facts, sections):
+    """A letter from a health authority about one commitment; its facts are the commitment, the
+    due date, whether it is met, and its owner at the company."""
+    product = gt["products"][doc["product"]]
+    rules = [
+        "Length: 450 to 800 words.",
+        f"Write it as a letter from the health authority named in the title to {gt['company']}, "
+        "addressed to the commitment's owner named in the facts.",
+        "Do not cite internal document numbers (STAB-, SPEC- or HAL-); describe studies and "
+        "reports in words. Invent reference, meeting and submission numbers freely.",
+        "Mention other dates too (the letter's own date, when the commitment was made, a "
+        "meeting or a submission), but nothing you write may contradict the facts above.",
+        "Markdown: one '# ' title line (the letter's subject), then plain paragraphs; a '## ' "
+        "heading only for a list of enclosures.",
+        "Output only the letter text: no YAML front matter, no page markers, no code fences, "
+        "no commentary.",
+    ]
+    rules_text = "\n".join(f"- {r}" for r in rules)
+    required = "\n".join(f"{i}. {ev}" for i, (_, ev) in enumerate(evidence(doc), 1))
+    return f"""Write the full text of this letter.
+
+Letter: {doc['id']}, dated {doc['effective_date']}
+Title: {doc['title']}
+Product: {doc['product']}, {product['drug']} {product['dosage_form']}
+
+Facts this letter conveys (JSON):
+{json.dumps(facts, indent=2, ensure_ascii=False)}
+
+REQUIRED SENTENCES. Each must appear exactly once, character for character, as ordinary prose
+inside a paragraph: not in a table, heading or list item, with no bold, italics or line breaks
+inside it, and not paraphrased.
+{required}
+
+Parts, in this order: {'; '.join(sections)}.
+
+Rules:
+{rules_text}"""
+
+
 def paginate(body):
     """Split at blank lines into pages of roughly PAGE_WORDS+ words, never right after a heading."""
     pages, cur, words = [], [], 0
@@ -177,7 +231,7 @@ def check(doc, body, pages):
     return problems
 
 
-def write_draft(client, prompt, company):
+def write_draft(client, prompt, system):
     with client.beta.messages.stream(
         model=os.environ.get("MODEL", "claude-opus-5-5"),
         max_tokens=32000,
@@ -185,7 +239,7 @@ def write_draft(client, prompt, company):
         output_config={"effort": os.environ.get("EFFORT", "medium")},
         betas=["server-side-fallback-2026-07-01"],
         fallbacks="default",  # re-run on a fallback model if the request is declined
-        system=SYSTEM.format(company=company),
+        system=system,
         messages=[{"role": "user", "content": prompt}],
     ) as stream:
         msg = stream.get_final_message()
@@ -212,6 +266,8 @@ def render(doc, pages):
 def generate(client, gt, doc, path):
     name = f"{doc['id']} v{doc['version']}"
     prompt = build_prompt(gt, doc)
+    system = LETTER_SYSTEM if doc["doc_type"] == "ha_letter" else SYSTEM
+    system = system.format(company=gt["company"])
     problems = []
     for attempt in range(1, MAX_RETRIES + 2):
         if problems:
@@ -219,7 +275,7 @@ def generate(client, gt, doc, path):
                           + "\n".join(f"- {p}" for p in problems))
         else:
             prompt_now = prompt
-        body, stop = write_draft(client, prompt_now, gt["company"])
+        body, stop = write_draft(client, prompt_now, system)
         pages = paginate(body)
         problems = [f"response stopped with {stop}"] if stop != "end_turn" else []
         problems += check(doc, body, pages)
